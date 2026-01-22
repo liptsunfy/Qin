@@ -1,0 +1,22 @@
+
+<view class="tuner-container">
+  <view class="auto-tune-toggle">
+    <switch checked="{{autoTune}}" bindchange="onAutoTuneToggle" />
+    <text>自动调音</text>
+  </view>
+
+  <view class="current-string">
+    <text>{{strings[currentStringIndex].name}} ({{strings[currentStringIndex].note}})</text>
+  </view>
+
+  <view class="tuning-bar">
+    <slider min="-50" max="50" value="{{tuningValue}}" show-value />
+  </view>
+
+  <view class="string-list">
+    <view wx:for="{{strings}}" wx:key="id" class="string-item" bindtap="onStringTap" data-index="{{index}}">
+      <text class="string-name">{{item.name}}</text>
+      <text class="string-status">{{item.tuned ? '已调准' : '未调准'}}</text>
+    </view>
+  </view>
+</view>

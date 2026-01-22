@@ -1,0 +1,17 @@
+
+<view class="knowledge-container">
+  <!-- 知识列表 -->
+  <view class="knowledge-list">
+    <view wx:for="{{knowledgeList}}" wx:key="id" class="knowledge-item" bindtap="onKnowledgeTap" data-id="{{item.id}}">
+      <text class="knowledge-title">{{item.title}}</text>
+      <text class="knowledge-description">{{item.description}}</text>
+    </view>
+  </view>
+
+  <!-- 展示具体内容 -->
+  <view class="knowledge-detail" wx:if="{{activeKnowledge}}">
+    <text class="knowledge-title">{{activeKnowledge.title}}</text>
+    <text class="knowledge-description">{{activeKnowledge.description}}</text>
+    <!-- 后期可以添加详细的内容或图文 -->
+  </view>
+</view>
