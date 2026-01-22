@@ -1,4 +1,3 @@
-
 Page({
   data: {
     strings: [
@@ -10,16 +9,18 @@ Page({
       { id: 6, name: '六弦', note: 'C', tuned: false, frequency: 261.626 },
       { id: 7, name: '七弦', note: 'G', tuned: false, frequency: 392.000 }
     ],
-    currentStringIndex: 0, // Track the current selected string
-    tuningValue: 0, // Frequency deviation
-    autoTune: false // Toggle auto-tune mode
+    currentStringIndex: 0,
+    tuningValue: 0,
+    autoTune: false,
+    isListening: false,
+    statusText: '未开始监听',
+    statusLevel: 'idle'
   },
 
   onLoad() {
     this.updateTuningFeedback();
   },
 
-  // Switch between strings
   onStringTap(e) {
     const index = e.currentTarget.dataset.index;
     this.setData({
@@ -28,19 +29,100 @@ Page({
     this.updateTuningFeedback();
   },
 
-  // Update tuning feedback based on the current string's frequency
   updateTuningFeedback() {
-    const currentString = this.data.strings[this.data.currentStringIndex];
-    // Simulate tuning feedback, you would integrate with microphone input for real data
+    const deviation = Number((Math.random() * 100 - 50).toFixed(1));
+    const clamped = Math.max(-50, Math.min(50, deviation));
+    const { statusText, statusLevel } = this.getStatusFromDeviation(clamped);
+
     this.setData({
-      tuningValue: (Math.random() * 100 - 50).toFixed(1) // Simulating deviation from target frequency
+      tuningValue: clamped,
+      statusText,
+      statusLevel
     });
   },
 
-  // Toggle auto-tune mode
+  getStatusFromDeviation(value) {
+    const abs = Math.abs(value);
+    if (abs <= 5) {
+      return { statusText: '音准稳定', statusLevel: 'ok' };
+    }
+    if (value < 0) {
+      return { statusText: '偏低，建议拧紧', statusLevel: 'low' };
+    }
+    return { statusText: '偏高，建议放松', statusLevel: 'high' };
+  },
+
   onAutoTuneToggle() {
     this.setData({
       autoTune: !this.data.autoTune
+    });
+  },
+
+  onToggleListen() {
+    const nextState = !this.data.isListening;
+    this.setData({ isListening: nextState });
+    if (nextState) {
+      this.startListening();
+      return;
+    }
+    this.stopListening();
+  },
+
+  startListening() {
+    this.stopListening();
+    this.setData({
+      statusText: '正在监听音高…',
+      statusLevel: 'listening'
+    });
+    this.listenTimer = setInterval(() => {
+      this.updateTuningFeedback();
+      if (this.data.autoTune) {
+        this.maybeAutoAdvance();
+      }
+    }, 800);
+  },
+
+  stopListening() {
+    if (this.listenTimer) {
+      clearInterval(this.listenTimer);
+      this.listenTimer = null;
+    }
+    this.setData({
+      statusText: '已停止监听',
+      statusLevel: 'idle'
+    });
+  },
+
+  maybeAutoAdvance() {
+    if (Math.abs(this.data.tuningValue) > 5) return;
+    const nextStrings = this.data.strings.map((item, index) => {
+      if (index === this.data.currentStringIndex) {
+        return { ...item, tuned: true };
+      }
+      return item;
+    });
+    const nextIndex = nextStrings.findIndex(item => !item.tuned);
+    this.setData({
+      strings: nextStrings,
+      currentStringIndex: nextIndex === -1 ? this.data.currentStringIndex : nextIndex
+    });
+  },
+
+  onMarkTuned() {
+    const nextStrings = this.data.strings.map((item, index) => {
+      if (index === this.data.currentStringIndex) {
+        return { ...item, tuned: true };
+      }
+      return item;
+    });
+    this.setData({ strings: nextStrings });
+  },
+
+  onResetTuned() {
+    const resetStrings = this.data.strings.map(item => ({ ...item, tuned: false }));
+    this.setData({
+      strings: resetStrings,
+      currentStringIndex: 0
     });
   }
 });

@@ -1,22 +1,68 @@
-
-<view class="tuner-container">
-  <view class="auto-tune-toggle">
-    <switch checked="{{autoTune}}" bindchange="onAutoTuneToggle" />
-    <text>自动调音</text>
+<view class="tuner-page">
+  <view class="card hero">
+    <text class="hero-title">琴调音器</text>
+    <text class="hero-subtitle">选择弦位 → 开始监听 → 观察指示条</text>
   </view>
 
-  <view class="current-string">
-    <text>{{strings[currentStringIndex].name}} ({{strings[currentStringIndex].note}})</text>
+  <view class="card status-card">
+    <view class="status-header">
+      <view class="status-main">
+        <text class="status-string">{{strings[currentStringIndex].name}}</text>
+        <text class="status-note">{{strings[currentStringIndex].note}}</text>
+      </view>
+      <view class="status-actions">
+        <switch checked="{{autoTune}}" bindchange="onAutoTuneToggle" />
+        <text class="status-toggle">自动换弦</text>
+      </view>
+    </view>
+    <text class="status-target">目标频率 {{strings[currentStringIndex].frequency.toFixed(1)}} Hz</text>
+    <view class="meter">
+      <view class="meter-track">
+        <view class="meter-center"></view>
+        <view class="meter-fill" style="transform: translateX({{tuningValue}}%);"></view>
+      </view>
+      <view class="meter-labels">
+        <text>偏低</text>
+        <text>标准</text>
+        <text>偏高</text>
+      </view>
+    </view>
+    <view class="status-pill {{statusLevel}}">
+      <text>{{statusText}}</text>
+    </view>
+    <view class="status-buttons">
+      <button class="primary" bindtap="onToggleListen">{{isListening ? '停止监听' : '开始监听'}}</button>
+      <button class="ghost" bindtap="onMarkTuned">标记已调准</button>
+    </view>
   </view>
 
-  <view class="tuning-bar">
-    <slider min="-50" max="50" value="{{tuningValue}}" show-value />
+  <view class="card">
+    <view class="section-header">
+      <text class="section-title">弦位列表</text>
+      <text class="section-action" bindtap="onResetTuned">重置</text>
+    </view>
+    <view class="string-grid">
+      <view wx:for="{{strings}}" wx:key="id" class="string-item {{index === currentStringIndex ? 'active' : ''}}" bindtap="onStringTap" data-index="{{index}}">
+        <text class="string-name">{{item.name}}</text>
+        <text class="string-note">{{item.note}}</text>
+        <text class="string-status {{item.tuned ? 'tuned' : ''}}">{{item.tuned ? '已调准' : '待调音'}}</text>
+      </view>
+    </view>
   </view>
 
-  <view class="string-list">
-    <view wx:for="{{strings}}" wx:key="id" class="string-item" bindtap="onStringTap" data-index="{{index}}">
-      <text class="string-name">{{item.name}}</text>
-      <text class="string-status">{{item.tuned ? '已调准' : '未调准'}}</text>
+  <view class="card tips">
+    <text class="section-title">调音提示</text>
+    <view class="tip-item">
+      <text class="tip-dot">•</text>
+      <text class="tip-text">先松后紧，避免拉断弦。</text>
+    </view>
+    <view class="tip-item">
+      <text class="tip-dot">•</text>
+      <text class="tip-text">听到“拍音”时，逐步减小差异。</text>
+    </view>
+    <view class="tip-item">
+      <text class="tip-dot">•</text>
+      <text class="tip-text">每根弦调完后回到一弦复核一次。</text>
     </view>
   </view>
 </view>
