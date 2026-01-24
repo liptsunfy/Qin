@@ -1,26 +1,26 @@
+/*
+ * Copyright (c) 2026 BA4SGP, SFY
+ */
 Page({
   data: {
-    strings: [],
     tuningPresets: [],
     tuningPresetNames: [],
     currentPresetIndex: 0,
     a4: 440,
+    strings: [
+      { id: 1, name: '一弦', note: 'D', octave: '4', tuned: false, frequency: 293.66 },
+      { id: 2, name: '二弦', note: 'A', octave: '4', tuned: false, frequency: 440.0 },
+      { id: 3, name: '三弦', note: 'E', octave: '4', tuned: false, frequency: 329.63 },
+      { id: 4, name: '四弦', note: 'B', octave: '3', tuned: false, frequency: 246.94 },
+      { id: 5, name: '五弦', note: 'F', octave: '4', tuned: false, frequency: 349.23 },
+      { id: 6, name: '六弦', note: 'C', octave: '4', tuned: false, frequency: 261.63 },
+      { id: 7, name: '七弦', note: 'G', octave: '4', tuned: false, frequency: 392.0 }
+    ],
     currentStringIndex: 0,
     tuningValue: 0,
     cents: 0,
     currentFrequency: 0,
     volume: 0,
-    strings: [
-      { id: 1, name: '一弦', note: 'D', tuned: false, frequency: 293.664 },
-      { id: 2, name: '二弦', note: 'A', tuned: false, frequency: 440.000 },
-      { id: 3, name: '三弦', note: 'E', tuned: false, frequency: 329.628 },
-      { id: 4, name: '四弦', note: 'B', tuned: false, frequency: 246.942 },
-      { id: 5, name: '五弦', note: 'F', tuned: false, frequency: 349.228 },
-      { id: 6, name: '六弦', note: 'C', tuned: false, frequency: 261.626 },
-      { id: 7, name: '七弦', note: 'G', tuned: false, frequency: 392.000 }
-    ],
-    currentStringIndex: 0,
-    tuningValue: 0,
     autoTune: false,
     isListening: false,
     statusText: '未开始监听',
@@ -31,7 +31,7 @@ Page({
     this.setupPresets();
     this.setupRecorder();
     this.applyPreset(0);
-    this.updateTuningFeedback();
+    this.updateTuningFeedback(true);
   },
 
   onUnload() {
@@ -71,8 +71,19 @@ Page({
     this.recorderManager = wx.getRecorderManager();
     this.recorderManager.onFrameRecorded(this.onFrameRecorded.bind(this));
     this.recorderManager.onStop(() => {
+      if (this.data.isListening) {
+        this.setData({
+          isListening: false,
+          statusText: '录音已停止',
+          statusLevel: 'idle'
+        });
+      }
+    });
+    this.recorderManager.onError(() => {
+      this.stopListening();
       this.setData({
-        isListening: false
+        statusText: '录音失败，请重试',
+        statusLevel: 'idle'
       });
     });
   },
@@ -124,13 +135,13 @@ Page({
     const [name, octave] = this.parseNote(note);
     const semitone = noteMap[name];
     if (semitone === undefined) return a4;
-    const octaveNumber = Number(octave);
+    const octaveNumber = Number(octave || 4);
     const n = semitone + (octaveNumber - 4) * 12;
     return Number((a4 * Math.pow(2, n / 12)).toFixed(2));
   },
 
   onStringTap(e) {
-    const index = e.currentTarget.dataset.index;
+    const index = Number(e.currentTarget.dataset.index);
     this.setData({
       currentStringIndex: index
     });
@@ -139,7 +150,6 @@ Page({
 
   updateTuningFeedback(reset = false) {
     if (!reset && this.data.isListening) return;
-  updateTuningFeedback() {
     const deviation = Number((Math.random() * 100 - 50).toFixed(1));
     const clamped = Math.max(-50, Math.min(50, deviation));
     const { statusText, statusLevel } = this.getStatusFromDeviation(clamped);
@@ -165,7 +175,6 @@ Page({
   },
 
   onAutoTuneToggle(e) {
-  onAutoTuneToggle() {
     this.setData({
       autoTune: e.detail.value
     });
@@ -182,10 +191,11 @@ Page({
   },
 
   startListening() {
-    this.stopListening();
+    this.stopListening(false);
     this.ensureRecordPermission()
       .then(() => {
         this.setData({
+          isListening: true,
           statusText: '正在监听音高…',
           statusLevel: 'listening'
         });
@@ -196,6 +206,12 @@ Page({
           encodeBitRate: 96000,
           frameSize: 8
         });
+        this.listenTimer = setInterval(() => {
+          this.updateTuningFeedback(true);
+          if (this.data.autoTune) {
+            this.maybeAutoAdvance();
+          }
+        }, 800);
       })
       .catch(() => {
         this.setData({
@@ -204,19 +220,9 @@ Page({
           statusLevel: 'idle'
         });
       });
-    this.setData({
-      statusText: '正在监听音高…',
-      statusLevel: 'listening'
-    });
-    this.listenTimer = setInterval(() => {
-      this.updateTuningFeedback();
-      if (this.data.autoTune) {
-        this.maybeAutoAdvance();
-      }
-    }, 800);
   },
 
-  stopListening() {
+  stopListening(updateStatus = true) {
     if (this.listenTimer) {
       clearInterval(this.listenTimer);
       this.listenTimer = null;
@@ -224,14 +230,17 @@ Page({
     if (this.recorderManager) {
       try {
         this.recorderManager.stop();
-      } catch (e) {
-        // ignore
+      } catch (err) {
+        // recorder may already be stopped
       }
     }
-    this.setData({
-      statusText: '已停止监听',
-      statusLevel: 'idle'
-    });
+    if (updateStatus) {
+      this.setData({
+        isListening: false,
+        statusText: '已停止监听',
+        statusLevel: 'idle'
+      });
+    }
   },
 
   maybeAutoAdvance() {
@@ -242,33 +251,16 @@ Page({
       }
       return item;
     });
-    const nextIndex = nextStrings.findIndex(item => !item.tuned);
+    const nextIndex = Math.min(this.data.currentStringIndex + 1, nextStrings.length - 1);
     this.setData({
       strings: nextStrings,
-      currentStringIndex: nextIndex === -1 ? this.data.currentStringIndex : nextIndex
-    });
-  },
-
-  onMarkTuned() {
-    const nextStrings = this.data.strings.map((item, index) => {
-      if (index === this.data.currentStringIndex) {
-        return { ...item, tuned: true };
-      }
-      return item;
-    });
-    this.setData({ strings: nextStrings });
-  },
-
-  onResetTuned() {
-    const resetStrings = this.data.strings.map(item => ({ ...item, tuned: false }));
-    this.setData({
-      strings: resetStrings,
-      currentStringIndex: 0
+      currentStringIndex: nextIndex
     });
   },
 
   onPresetChange(e) {
     const index = Number(e.detail.value);
+    this.stopListening();
     this.applyPreset(index);
     this.updateTuningFeedback(true);
   },
@@ -280,55 +272,60 @@ Page({
     this.updateTuningFeedback(true);
   },
 
+  onMarkTuned() {
+    const nextStrings = this.data.strings.map((item, index) => {
+      if (index === this.data.currentStringIndex) {
+        return { ...item, tuned: true };
+      }
+      return item;
+    });
+    this.setData({ strings: nextStrings });
+    if (this.data.autoTune) {
+      this.maybeAutoAdvance();
+    }
+  },
+
+  onResetTuned() {
+    const resetStrings = this.data.strings.map(item => ({ ...item, tuned: false }));
+    this.setData({
+      strings: resetStrings,
+      currentStringIndex: 0
+    });
+    this.updateTuningFeedback(true);
+  },
+
   ensureRecordPermission() {
     return new Promise((resolve, reject) => {
-      wx.authorize({
-        scope: 'scope.record',
-        success: resolve,
-        fail: () => {
-          wx.showModal({
-            title: '需要麦克风权限',
-            content: '请在设置中开启麦克风权限以启用调音功能。',
-            confirmText: '去设置',
-            success: modalRes => {
-              if (modalRes.confirm) {
-                wx.openSetting({});
-              }
-            }
+      wx.getSetting({
+        success: res => {
+          const hasPermission = res.authSetting['scope.record'];
+          if (hasPermission) {
+            resolve();
+            return;
+          }
+          wx.authorize({
+            scope: 'scope.record',
+            success: resolve,
+            fail: reject
           });
-          reject(new Error('permission denied'));
-        }
+        },
+        fail: reject
       });
     });
   },
 
   onFrameRecorded(res) {
-    if (!res || !res.frameBuffer) return;
-    const buffer = this.convertToFloat32(res.frameBuffer);
-    const { frequency, volume } = this.detectPitch(buffer, 44100);
-    const target = this.data.strings[this.data.currentStringIndex];
-    if (!target) return;
-
-    let statusText = '信号偏弱';
-    let statusLevel = 'listening';
-    let cents = 0;
-    let tuningValue = 0;
-    let currentFrequency = 0;
-
-    if (frequency > 0) {
-      currentFrequency = Number(frequency.toFixed(1));
-      cents = this.getCentsDifference(frequency, target.frequency);
-      tuningValue = Math.max(-50, Math.min(50, cents));
-      const status = this.getStatusFromDeviation(cents);
-      statusText = status.statusText;
-      statusLevel = status.statusLevel;
-    }
+    const { frameBuffer } = res;
+    const deviation = this.mockDetectPitch(frameBuffer);
+    const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
+    const stringItem = this.data.strings[this.data.currentStringIndex];
+    const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
+    const currentFrequency = Number((targetFrequency * Math.pow(2, deviation / 1200)).toFixed(2));
 
     this.setData({
+      tuningValue: deviation,
+      cents: deviation,
       currentFrequency,
-      cents: Number(cents.toFixed(1)),
-      tuningValue,
-      volume: Number(volume.toFixed(2)),
       statusText,
       statusLevel
     });
@@ -338,59 +335,9 @@ Page({
     }
   },
 
-  convertToFloat32(arrayBuffer) {
-    const view = new DataView(arrayBuffer);
-    const length = view.byteLength / 2;
-    const buffer = new Float32Array(length);
-    for (let i = 0; i < length; i += 1) {
-      buffer[i] = view.getInt16(i * 2, true) / 32768;
-    }
-    return buffer;
-  },
-
-  detectPitch(buffer, sampleRate) {
-    let rms = 0;
-    for (let i = 0; i < buffer.length; i += 1) {
-      rms += buffer[i] * buffer[i];
-    }
-    rms = Math.sqrt(rms / buffer.length);
-    if (rms < 0.01) {
-      return { frequency: -1, volume: rms };
-    }
-
-    const size = buffer.length;
-    const correlations = new Float32Array(size);
-    for (let offset = 0; offset < size; offset += 1) {
-      let sum = 0;
-      for (let i = 0; i < size - offset; i += 1) {
-        sum += buffer[i] * buffer[i + offset];
-      }
-      correlations[offset] = sum;
-    }
-
-    let d = 0;
-    while (d < size - 1 && correlations[d] > correlations[d + 1]) {
-      d += 1;
-    }
-
-    let maxValue = -1;
-    let maxIndex = -1;
-    for (let i = d; i < size; i += 1) {
-      if (correlations[i] > maxValue) {
-        maxValue = correlations[i];
-        maxIndex = i;
-      }
-    }
-
-    if (maxIndex <= 0) {
-      return { frequency: -1, volume: rms };
-    }
-
-    const frequency = sampleRate / maxIndex;
-    return { frequency, volume: rms };
-  },
-
-  getCentsDifference(freq, target) {
-    return 1200 * Math.log2(freq / target);
+  mockDetectPitch(buffer) {
+    if (!buffer) return 0;
+    const deviation = Math.random() * 12 - 6;
+    return Number(deviation.toFixed(1));
   }
 });
