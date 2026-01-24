@@ -2,6 +2,13 @@
 .card{background:#fff;border-radius:24rpx;padding:24rpx;margin-bottom:16rpx;box-shadow:0 8rpx 24rpx rgba(0,0,0,0.04)}
 .hero-title{font-size:36rpx;font-weight:600;color:#222}
 .hero-subtitle{margin-top:10rpx;font-size:24rpx;color:#666}
+.settings-card{display:flex;flex-direction:column;gap:16rpx}
+.setting-row{display:flex;justify-content:space-between;align-items:center;gap:16rpx}
+.setting-label{font-size:24rpx;color:#444;font-weight:600}
+.setting-value{display:flex;flex-direction:column;align-items:flex-end;gap:6rpx}
+.setting-desc{font-size:20rpx;color:#999}
+.setting-slider{flex:1;display:flex;align-items:center;gap:12rpx}
+.setting-value-text{font-size:22rpx;color:#666;min-width:100rpx;text-align:right}
 .status-card{display:flex;flex-direction:column;gap:16rpx}
 .status-header{display:flex;justify-content:space-between;align-items:center}
 .status-main{display:flex;align-items:baseline;gap:12rpx}
@@ -9,6 +16,7 @@
 .status-note{font-size:26rpx;color:#b18a5a}
 .status-actions{display:flex;align-items:center;gap:10rpx;font-size:22rpx;color:#666}
 .status-toggle{font-size:22rpx;color:#666}
+.status-meta{display:flex;justify-content:space-between;font-size:22rpx;color:#888}
 .status-target{font-size:22rpx;color:#888}
 .meter{display:flex;flex-direction:column;gap:10rpx}
 .meter-track{height:20rpx;background:#f0f0f0;border-radius:999rpx;position:relative;overflow:hidden}
