@@ -21,6 +21,7 @@
         <text class="setting-value-text">{{a4}} Hz</text>
       </view>
     </view>
+    <text class="hero-subtitle">选择弦位 → 开始监听 → 观察指示条</text>
   </view>
 
   <view class="card status-card">
@@ -28,6 +29,7 @@
       <view class="status-main">
         <text class="status-string">{{strings[currentStringIndex].name}}</text>
         <text class="status-note">{{strings[currentStringIndex].note}}{{strings[currentStringIndex].octave}}</text>
+        <text class="status-note">{{strings[currentStringIndex].note}}</text>
       </view>
       <view class="status-actions">
         <switch checked="{{autoTune}}" bindchange="onAutoTuneToggle" />
@@ -42,6 +44,7 @@
       <text>偏差 {{cents}} cents</text>
       <text>音量 {{volume}}</text>
     </view>
+    <text class="status-target">目标频率 {{strings[currentStringIndex].frequency.toFixed(1)}} Hz</text>
     <view class="meter">
       <view class="meter-track">
         <view class="meter-center"></view>
@@ -71,6 +74,7 @@
       <view wx:for="{{strings}}" wx:key="id" class="string-item {{index === currentStringIndex ? 'active' : ''}}" bindtap="onStringTap" data-index="{{index}}">
         <text class="string-name">{{item.name}}</text>
         <text class="string-note">{{item.note}}{{item.octave}}</text>
+        <text class="string-note">{{item.note}}</text>
         <text class="string-status {{item.tuned ? 'tuned' : ''}}">{{item.tuned ? '已调准' : '待调音'}}</text>
       </view>
     </view>

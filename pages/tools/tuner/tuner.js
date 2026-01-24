@@ -10,6 +10,17 @@ Page({
     cents: 0,
     currentFrequency: 0,
     volume: 0,
+    strings: [
+      { id: 1, name: '一弦', note: 'D', tuned: false, frequency: 293.664 },
+      { id: 2, name: '二弦', note: 'A', tuned: false, frequency: 440.000 },
+      { id: 3, name: '三弦', note: 'E', tuned: false, frequency: 329.628 },
+      { id: 4, name: '四弦', note: 'B', tuned: false, frequency: 246.942 },
+      { id: 5, name: '五弦', note: 'F', tuned: false, frequency: 349.228 },
+      { id: 6, name: '六弦', note: 'C', tuned: false, frequency: 261.626 },
+      { id: 7, name: '七弦', note: 'G', tuned: false, frequency: 392.000 }
+    ],
+    currentStringIndex: 0,
+    tuningValue: 0,
     autoTune: false,
     isListening: false,
     statusText: '未开始监听',
@@ -128,6 +139,7 @@ Page({
 
   updateTuningFeedback(reset = false) {
     if (!reset && this.data.isListening) return;
+  updateTuningFeedback() {
     const deviation = Number((Math.random() * 100 - 50).toFixed(1));
     const clamped = Math.max(-50, Math.min(50, deviation));
     const { statusText, statusLevel } = this.getStatusFromDeviation(clamped);
@@ -153,6 +165,7 @@ Page({
   },
 
   onAutoTuneToggle(e) {
+  onAutoTuneToggle() {
     this.setData({
       autoTune: e.detail.value
     });
@@ -191,6 +204,16 @@ Page({
           statusLevel: 'idle'
         });
       });
+    this.setData({
+      statusText: '正在监听音高…',
+      statusLevel: 'listening'
+    });
+    this.listenTimer = setInterval(() => {
+      this.updateTuningFeedback();
+      if (this.data.autoTune) {
+        this.maybeAutoAdvance();
+      }
+    }, 800);
   },
 
   stopListening() {

@@ -17,6 +17,7 @@
 .status-actions{display:flex;align-items:center;gap:10rpx;font-size:22rpx;color:#666}
 .status-toggle{font-size:22rpx;color:#666}
 .status-meta{display:flex;justify-content:space-between;font-size:22rpx;color:#888}
+.status-target{font-size:22rpx;color:#888}
 .meter{display:flex;flex-direction:column;gap:10rpx}
 .meter-track{height:20rpx;background:#f0f0f0;border-radius:999rpx;position:relative;overflow:hidden}
 .meter-center{position:absolute;left:50%;top:0;width:4rpx;height:100%;background:#111}
