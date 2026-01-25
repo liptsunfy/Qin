@@ -212,6 +212,7 @@ Page({
           if (!this.lastFrameAt || now - this.lastFrameAt > 1200) {
             this.updateTuningFeedback(true);
           }
+          this.updateTuningFeedback(true);
           if (this.data.autoTune) {
             this.maybeAutoAdvance();
           }
