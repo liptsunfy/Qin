@@ -40,22 +40,22 @@ const ToolsManager = {
       name: '节拍器',
       icon: '🎧',
       description: '练习节拍辅助',
-      enabled: false,
-      version: '0.1.0',
+      enabled: true,
+      version: '1.0.0',
       category: '练习工具',
-      hasPage: false,
-      comingSoon: true
+      hasPage: true,
+      pagePath: '/pages/tools/metronome/metronome'
     },
     {
       id: 'recorder',
       name: '录音',
       icon: '🎤',
       description: '练习录音回放',
-      enabled: false,
-      version: '0.1.0',
+      enabled: true,
+      version: '1.0.0',
       category: '练习工具',
-      hasPage: false,
-      comingSoon: true
+      hasPage: true,
+      pagePath: '/pages/tools/recorder/recorder'
     },
     {
       id: 'calculator',

@@ -2,6 +2,8 @@
   "pages": [
     "pages/tools/tools",
     "pages/tools/tuner/tuner",
+    "pages/tools/metronome/metronome",
+    "pages/tools/recorder/recorder",
     "pages/tools/notation/notation",
     "pages/tools/knowledge/knowledge",
     "pages/tools/calculator/calculator",
