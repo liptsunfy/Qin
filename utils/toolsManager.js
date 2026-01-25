@@ -8,7 +8,7 @@ const ToolsManager = {
       icon: '🎵',
       description: '古琴调音助手',
       enabled: true,
-      version: '1.0.0',
+      version: '1.0.1',
       category: '练习工具',
       hasPage: true,
       pagePath: '/pages/tools/tuner/tuner'
@@ -41,7 +41,7 @@ const ToolsManager = {
       icon: '🎧',
       description: '练习节拍辅助',
       enabled: true,
-      version: '1.0.0',
+      version: 'Beta',
       category: '练习工具',
       hasPage: true,
       pagePath: '/pages/tools/metronome/metronome'
@@ -63,7 +63,7 @@ const ToolsManager = {
       icon: '🧮',
       description: '徽位音高计算器',
       enabled: true,
-      version: '1.0.0',
+      version: 'Beta',
       category: '计算工具',
       hasPage: true,
       pagePath: '/pages/tools/calculator/calculator'
