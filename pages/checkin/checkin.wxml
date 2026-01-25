@@ -72,7 +72,7 @@
       <view class="custom-duration">
         <input 
           type="number" 
-          placeholder="自定义分钟数 (1-999)"
+          placeholder="在此输入时长（分钟）"
           value="{{customDuration}}"
           bindinput="onCustomDurationInput"
           class="input"
