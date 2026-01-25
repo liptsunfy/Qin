@@ -19,7 +19,7 @@ const ToolsManager = {
       icon: '📖',
       description: '常见减字谱对照表',
       enabled: true,
-      version: '1.0.0',
+      version: '1.1.0',
       category: '学习工具',
       hasPage: true,
       pagePath: '/pages/tools/notation/notation'
@@ -30,7 +30,7 @@ const ToolsManager = {
       icon: '🎓',
       description: '古琴基础知识库',
       enabled: true,
-      version: '1.0.0',
+      version: '1.0.1',
       category: '学习工具',
       hasPage: true,
       pagePath: '/pages/tools/knowledge/knowledge'
@@ -41,7 +41,7 @@ const ToolsManager = {
       icon: '🎧',
       description: '练习节拍辅助',
       enabled: true,
-      version: 'Beta',
+      version: '1.0.0',
       category: '练习工具',
       hasPage: true,
       pagePath: '/pages/tools/metronome/metronome'
@@ -62,8 +62,8 @@ const ToolsManager = {
       name: '徽位计算',
       icon: '🧮',
       description: '徽位音高计算器',
-      enabled: true,
-      version: 'Beta',
+      enabled: false,
+      version: '1.0.0',
       category: '计算工具',
       hasPage: true,
       pagePath: '/pages/tools/calculator/calculator'
