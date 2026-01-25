@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2026 BA4SGP, SFY
+ */
 App({
   onLaunch(options) {
     console.log('小程序初始化', options);
