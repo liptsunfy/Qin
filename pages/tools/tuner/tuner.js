@@ -32,6 +32,7 @@ Page({
     this.setupRecorder();
     this.applyPreset(0);
     this.updateTuningFeedback(true);
+    this.lastFrameAt = 0;
   },
 
   onUnload() {
@@ -207,6 +208,10 @@ Page({
           frameSize: 8
         });
         this.listenTimer = setInterval(() => {
+          const now = Date.now();
+          if (!this.lastFrameAt || now - this.lastFrameAt > 1200) {
+            this.updateTuningFeedback(true);
+          }
           this.updateTuningFeedback(true);
           if (this.data.autoTune) {
             this.maybeAutoAdvance();
@@ -241,6 +246,7 @@ Page({
         statusLevel: 'idle'
       });
     }
+    this.lastFrameAt = 0;
   },
 
   maybeAutoAdvance() {
@@ -321,6 +327,7 @@ Page({
     const stringItem = this.data.strings[this.data.currentStringIndex];
     const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
     const currentFrequency = Number((targetFrequency * Math.pow(2, deviation / 1200)).toFixed(2));
+    this.lastFrameAt = Date.now();
 
     this.setData({
       tuningValue: deviation,
