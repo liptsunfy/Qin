@@ -100,7 +100,7 @@
 
   <!-- 月度统计 -->
   <view class="month-stats card">
-    <text class="section-title">{{currentMonth}}月统计</text>
+    <text class="section-title">{{currentMonth}}月记录</text>
     <view class="stats-grid">
       <view class="month-stat">
         <text class="month-stat-value">{{monthlyStats.days}}</text>
@@ -112,7 +112,7 @@
       </view>
       <view class="month-stat">
         <text class="month-stat-value">{{monthlyStats.avgDuration}}</text>
-        <text class="month-stat-label">平均时长</text>
+        <text class="month-stat-label">平均时长(分钟)</text>
       </view>
     </view>
   </view>
@@ -130,11 +130,11 @@
         <text class="practice-desc">查看完整打卡详情</text>
       </view>
       <view class="practice-item" bindtap="goWeeklyReview">
-        <text class="practice-label">周习练回顾</text>
+        <text class="practice-label">周练习回顾</text>
         <text class="practice-desc">近 7 天趋势与统计</text>
       </view>
       <view class="practice-item" bindtap="goMonthlyReview">
-        <text class="practice-label">月习练回顾</text>
+        <text class="practice-label">月练习回顾</text>
         <text class="practice-desc">近 30 天趋势与统计</text>
       </view>
     </view>
