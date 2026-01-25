@@ -16,6 +16,7 @@ Page({
       { id: 6, name: '六弦', note: 'C', octave: '4', tuned: false, frequency: 261.63 },
       { id: 7, name: '七弦', note: 'G', octave: '4', tuned: false, frequency: 392.0 }
     ],
+    currentString: null,
     currentStringIndex: 0,
     tuningValue: 0,
     cents: 0,
@@ -105,10 +106,12 @@ Page({
         frequency
       };
     });
+    const currentStringIndex = 0;
     this.setData({
       strings,
       currentPresetIndex: index,
-      currentStringIndex: 0
+      currentStringIndex,
+      currentString: strings[currentStringIndex] || null
     });
   },
 
@@ -143,10 +146,24 @@ Page({
 
   onStringTap(e) {
     const index = Number(e.currentTarget.dataset.index);
-    this.setData({
-      currentStringIndex: index
-    });
+    this.selectString(index);
     this.updateTuningFeedback(true);
+  },
+
+  selectString(index) {
+    const strings = this.data.strings || [];
+    if (!strings.length) {
+      this.setData({
+        currentStringIndex: 0,
+        currentString: null
+      });
+      return;
+    }
+    const clampedIndex = Math.max(0, Math.min(index, strings.length - 1));
+    this.setData({
+      currentStringIndex: clampedIndex,
+      currentString: strings[clampedIndex]
+    });
   },
 
   updateTuningFeedback(reset = false) {
@@ -260,7 +277,8 @@ Page({
     const nextIndex = Math.min(this.data.currentStringIndex + 1, nextStrings.length - 1);
     this.setData({
       strings: nextStrings,
-      currentStringIndex: nextIndex
+      currentStringIndex: nextIndex,
+      currentString: nextStrings[nextIndex] || null
     });
   },
 
@@ -295,7 +313,8 @@ Page({
     const resetStrings = this.data.strings.map(item => ({ ...item, tuned: false }));
     this.setData({
       strings: resetStrings,
-      currentStringIndex: 0
+      currentStringIndex: 0,
+      currentString: resetStrings[0] || null
     });
     this.updateTuningFeedback(true);
   },
@@ -324,7 +343,7 @@ Page({
     const { frameBuffer } = res;
     const deviation = this.mockDetectPitch(frameBuffer);
     const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
-    const stringItem = this.data.strings[this.data.currentStringIndex];
+    const stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
     const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
     const currentFrequency = Number((targetFrequency * Math.pow(2, deviation / 1200)).toFixed(2));
     this.lastFrameAt = Date.now();
