@@ -21,14 +21,14 @@
         <text class="setting-value-text">{{a4}} Hz</text>
       </view>
     </view>
-    <text class="hero-subtitle">选择弦位 → 开始监听 → 观察指示条</text>
+    <view class="setting-hint">选择弦位 → 开始监听 → 观察指示条</view>
   </view>
 
   <view class="card status-card" wx:if="{{strings.length}}">
     <view class="status-header">
       <view class="status-main">
-        <text class="status-string">{{strings[currentStringIndex].name}}</text>
-        <text class="status-note">{{strings[currentStringIndex].note}}{{strings[currentStringIndex].octave}}</text>
+        <text class="status-string">{{currentString ? currentString.name : ''}}</text>
+        <text class="status-note">{{currentString ? currentString.note : ''}}{{currentString ? currentString.octave : ''}}</text>
       </view>
       <view class="status-actions">
         <switch checked="{{autoTune}}" bindchange="onAutoTuneToggle" />
@@ -36,14 +36,14 @@
       </view>
     </view>
     <view class="status-meta">
-      <text>目标 {{strings[currentStringIndex].frequency.toFixed(1)}} Hz</text>
+      <text>目标 {{currentString ? currentString.frequency.toFixed(1) : '--'}} Hz</text>
       <text wx:if="{{currentFrequency > 0}}">当前 {{currentFrequency}} Hz</text>
     </view>
     <view class="status-meta">
       <text>偏差 {{cents}} cents</text>
       <text>音量 {{volume}}</text>
     </view>
-    <text class="status-target">目标频率 {{strings[currentStringIndex].frequency.toFixed(1)}} Hz</text>
+    <text class="status-target">目标频率 {{currentString ? currentString.frequency.toFixed(1) : '--'}} Hz</text>
     <view class="meter">
       <view class="meter-track">
         <view class="meter-center"></view>
