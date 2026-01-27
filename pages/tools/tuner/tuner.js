@@ -217,6 +217,8 @@ Page({
     this.stopListening(false);
     this.ensureRecordPermission()
       .then(() => {
+        const sampleRate = 44100;
+        this.sampleRate = sampleRate;
         this.setData({
           isListening: true,
           statusText: '正在监听音高…',
@@ -226,10 +228,12 @@ Page({
         this.frequencyHistory = [];
         this.recorderManager.start({
           format: 'PCM',
-          sampleRate: 44100,
+          sampleRate,
           numberOfChannels: 1,
           encodeBitRate: 96000,
-          frameSize: 8
+          frameSize: 20,
+          duration: 10 * 60 * 1000,
+          audioSource: 'auto'
         });
         this.listenTimer = setInterval(() => {
           const now = Date.now();
@@ -422,7 +426,7 @@ Page({
     if (!buffer) return null;
     const data = new Int16Array(buffer);
     if (!data.length) return null;
-    const sampleRate = 44100;
+    const sampleRate = this.sampleRate || 44100;
     const floatBuffer = new Float32Array(data.length);
     let rms = 0;
     for (let i = 0; i < data.length; i += 1) {
@@ -435,7 +439,7 @@ Page({
       return null;
     }
     const frequency = this.autoCorrelate(floatBuffer, sampleRate);
-    if (!frequency || frequency === -1) {
+    if (!frequency || frequency === -1 || frequency < 50 || frequency > 2000) {
       return null;
     }
     const volume = Math.min(100, Math.round(rms * 200));
@@ -458,48 +462,57 @@ Page({
 
   autoCorrelate(buffer, sampleRate) {
     const size = buffer.length;
-    const correlations = new Array(size).fill(0);
+    if (size < 32) return -1;
+
+    let rms = 0;
+    for (let i = 0; i < size; i += 1) {
+      rms += buffer[i] * buffer[i];
+    }
+    rms = Math.sqrt(rms / size);
+    if (rms < 0.01) return -1;
+
     let start = 0;
     let end = size - 1;
     const threshold = 0.2;
-
     while (start < size / 2 && Math.abs(buffer[start]) < threshold) start += 1;
     while (end > size / 2 && Math.abs(buffer[end]) < threshold) end -= 1;
 
     const trimmed = buffer.slice(start, end);
     const trimmedSize = trimmed.length;
-    if (trimmedSize < 2) return -1;
+    if (trimmedSize < 32) return -1;
 
-    for (let offset = 0; offset < trimmedSize; offset += 1) {
+    const correlations = new Array(trimmedSize).fill(0);
+    for (let lag = 0; lag < trimmedSize; lag += 1) {
       let sum = 0;
-      for (let i = 0; i < trimmedSize - offset; i += 1) {
-        sum += trimmed[i] * trimmed[i + offset];
+      for (let i = 0; i < trimmedSize - lag; i += 1) {
+        sum += trimmed[i] * trimmed[i + lag];
       }
-      correlations[offset] = sum;
+      correlations[lag] = sum;
     }
 
     let dip = 0;
     while (dip < trimmedSize - 1 && correlations[dip] > correlations[dip + 1]) dip += 1;
 
-    let maxVal = -1;
-    let maxPos = -1;
+    let peakIndex = -1;
+    let peakValue = -Infinity;
     for (let i = dip; i < trimmedSize; i += 1) {
-      if (correlations[i] > maxVal) {
-        maxVal = correlations[i];
-        maxPos = i;
+      if (correlations[i] > peakValue) {
+        peakValue = correlations[i];
+        peakIndex = i;
       }
     }
 
-    if (maxPos <= 0) return -1;
-    let t0 = maxPos;
-    if (maxPos < trimmedSize - 1) {
-      const x1 = correlations[maxPos - 1];
-      const x2 = correlations[maxPos];
-      const x3 = correlations[maxPos + 1];
+    if (peakIndex <= 0) return -1;
+
+    let t0 = peakIndex;
+    if (peakIndex < trimmedSize - 1) {
+      const x1 = correlations[peakIndex - 1];
+      const x2 = correlations[peakIndex];
+      const x3 = correlations[peakIndex + 1];
       const a = (x1 + x3 - 2 * x2) / 2;
       const b = (x3 - x1) / 2;
       if (a) {
-        t0 = t0 - b / (2 * a);
+        t0 = peakIndex - b / (2 * a);
       }
     }
 

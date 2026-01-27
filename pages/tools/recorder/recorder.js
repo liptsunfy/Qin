@@ -56,13 +56,14 @@ Page({
   },
 
   loadRecordings() {
-    const recordings = wx.getStorageSync(STORAGE_KEY) || [];
+    const recordings = (wx.getStorageSync(STORAGE_KEY) || []).map(record => this.normalizeRecord(record));
     this.setData({ recordings });
   },
 
   saveRecordings(recordings) {
-    wx.setStorageSync(STORAGE_KEY, recordings);
-    this.setData({ recordings });
+    const nextRecords = recordings.map(record => this.normalizeRecord(record));
+    wx.setStorageSync(STORAGE_KEY, nextRecords);
+    this.setData({ recordings: nextRecords });
   },
 
   requestPermission() {
@@ -168,7 +169,7 @@ Page({
           filePath: saveRes.savedFilePath,
           createTime: Date.now()
         };
-        const newRecords = [record, ...this.data.recordings];
+        const newRecords = [this.normalizeRecord(record), ...this.data.recordings];
         this.saveRecordings(newRecords);
         this.resetRecorderState();
       },
@@ -216,6 +217,30 @@ Page({
     const date = new Date();
     const pad = (value) => value.toString().padStart(2, '0');
     return `录音 ${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  },
+
+  normalizeRecord(record) {
+    if (!record) return record;
+    const createTime = record.createTime || Date.now();
+    const duration = record.duration || 0;
+    const durationText = record.durationText || this.formatDuration(duration);
+    const createTimeText = record.createTimeText || this.formatDateTime(createTime);
+    const savedAtText = record.savedAt ? this.formatDateTime(record.savedAt) : record.savedAtText || '';
+    return {
+      ...record,
+      createTime,
+      duration,
+      durationText,
+      createTimeText,
+      savedAtText
+    };
+  },
+
+  formatDateTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const pad = (value) => value.toString().padStart(2, '0');
+    return `${date.getMonth() + 1}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   },
 
   togglePlay(e) {
@@ -274,6 +299,79 @@ Page({
     wx.showToast({ title: '当前版本不支持分享音频', icon: 'none' });
   },
 
+  saveRecording(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+
+    const fs = wx.getFileSystemManager();
+    const saveDir = `${wx.env.USER_DATA_PATH}/recordings`;
+    const safeName = record.name.replace(/[\\/:*?"<>|]/g, '_');
+    const targetPath = `${saveDir}/${safeName}-${record.id}.mp3`;
+
+    const ensureDir = () => new Promise((resolve) => {
+      fs.mkdir({
+        dirPath: saveDir,
+        recursive: true,
+        success: resolve,
+        fail: resolve
+      });
+    });
+
+    ensureDir().then(() => {
+      fs.copyFile({
+        srcPath: record.filePath,
+        destPath: targetPath,
+        success: () => {
+          const updated = this.data.recordings.map(item => {
+            if (item.id !== record.id) return item;
+            return {
+              ...item,
+              savedCopyPath: targetPath,
+              savedAt: Date.now()
+            };
+          });
+          this.saveRecordings(updated);
+          wx.showToast({ title: '已保存到本地', icon: 'success' });
+        },
+        fail: (err) => {
+          const msg = err && err.errMsg ? err.errMsg : '';
+          if (msg.includes('exists')) {
+            wx.showToast({ title: '已保存过', icon: 'none' });
+            return;
+          }
+          wx.showToast({ title: '保存失败', icon: 'error' });
+        }
+      });
+    });
+  },
+
+  renameRecording(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+    wx.showModal({
+      title: '重命名录音',
+      editable: true,
+      placeholderText: '请输入新的名称',
+      content: record.name,
+      success: (res) => {
+        if (!res.confirm) return;
+        const value = (res.content || '').trim();
+        if (!value) {
+          wx.showToast({ title: '名称不能为空', icon: 'none' });
+          return;
+        }
+        const updated = this.data.recordings.map(item => {
+          if (item.id !== record.id) return item;
+          return {
+            ...item,
+            name: value
+          };
+        });
+        this.saveRecordings(updated);
+      }
+    });
+  },
+
   deleteRecording(e) {
     const record = e.currentTarget.dataset.record;
     if (!record) return;
@@ -283,11 +381,23 @@ Page({
       content: '确定要删除这条录音吗？',
       success: (res) => {
         if (!res.confirm) return;
+        if (this.data.playingId === record.id) {
+          this.stopPlayback();
+        }
         const newRecords = this.data.recordings.filter(item => item.id !== record.id);
         this.saveRecordings(newRecords);
-        wx.removeSavedFile({
-          filePath: record.filePath,
-          complete: () => {}
+        const fs = wx.getFileSystemManager();
+        const paths = [record.filePath, record.savedCopyPath].filter(Boolean);
+        paths.forEach((path) => {
+          wx.removeSavedFile({
+            filePath: path,
+            complete: () => {
+              fs.unlink({
+                filePath: path,
+                complete: () => {}
+              });
+            }
+          });
         });
       }
     });

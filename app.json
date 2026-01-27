@@ -9,6 +9,7 @@
     "pages/tools/calculator/calculator",
     "pages/checkin/checkin",
     "pages/profile/profile",
+    "pages/webview/webview",
     "pages/review/review",
     "pages/records/records"
   ],

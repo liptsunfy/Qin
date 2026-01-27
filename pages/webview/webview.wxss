@@ -1,0 +1,11 @@
+.webview-page {
+  min-height: 100vh;
+  background: #f7f8fc;
+}
+
+.webview-empty {
+  padding: 40rpx 32rpx;
+  text-align: center;
+  color: #888;
+  font-size: 26rpx;
+}

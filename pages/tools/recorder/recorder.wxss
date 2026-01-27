@@ -95,8 +95,8 @@
 
 .record-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 16rpx;
   padding: 20rpx 0;
   border-bottom: 1rpx solid #f0f0f0;
 }
@@ -108,7 +108,14 @@
 .record-info {
   display: flex;
   flex-direction: column;
-  gap: 6rpx;
+  gap: 10rpx;
+}
+
+.record-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
 }
 
 .record-name {
@@ -117,14 +124,26 @@
   color: #2a2a2a;
 }
 
+.record-tag {
+  font-size: 20rpx;
+  color: #5c6cff;
+  background: #eef1ff;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+}
+
 .record-meta {
   font-size: 22rpx;
   color: #8a8a8a;
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
 }
 
 .record-actions {
   display: flex;
   gap: 12rpx;
+  flex-wrap: wrap;
 }
 
 .icon-btn {
