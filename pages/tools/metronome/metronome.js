@@ -12,8 +12,13 @@ Page({
     beatOptions: [2, 3, 4, 6]
   },
 
+  onLoad() {
+    this.setupAudio();
+  },
+
   onUnload() {
     this.stopMetronome();
+    this.destroyAudio();
   },
 
   onBpmChange(e) {
@@ -73,6 +78,7 @@ Page({
   tick() {
     const nextBeat = (this.data.currentBeat % this.data.beatsPerBar) + 1;
     this.setData({ currentBeat: nextBeat });
+    this.playClick(nextBeat === 1);
     if (wx.vibrateShort) {
       wx.vibrateShort({ type: nextBeat === 1 ? 'heavy' : 'light' });
     }
@@ -104,5 +110,40 @@ Page({
         this.restartMetronome();
       }
     }
+  },
+  setupAudio() {
+    if (!wx.createWebAudioContext) {
+      this.audioContext = null;
+      return;
+    }
+    this.audioContext = wx.createWebAudioContext();
+    if (this.audioContext && this.audioContext.resume) {
+      this.audioContext.resume();
+    }
+  },
+
+  destroyAudio() {
+    if (this.audioContext && this.audioContext.close) {
+      this.audioContext.close();
+    }
+    this.audioContext = null;
+  },
+
+  playClick(isDownbeat) {
+    const ctx = this.audioContext;
+    if (!ctx || !ctx.createOscillator || !ctx.createGain) return;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = isDownbeat ? 1200 : 800;
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    const now = ctx.currentTime || 0;
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(1, now + 0.005);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    oscillator.start(now);
+    oscillator.stop(now + 0.09);
   }
 });
