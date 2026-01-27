@@ -417,6 +417,17 @@
 
 /* 分享打卡记录 */
 .share-card {
+  margin: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* 关注公众号 */
 .follow-card {
   margin: 12px;
@@ -434,14 +445,14 @@
   flex: 1;
 }
 
-.share-title {
+.share-title,
 .follow-title {
   font-size: 16px;
   font-weight: 600;
   color: #333;
 }
 
-.share-desc {
+.share-desc,
 .follow-desc {
   margin-top: 6px;
   font-size: 12px;
@@ -455,6 +466,8 @@
   background: linear-gradient(135deg, #5c6cff, #7b7bff);
   color: #ffffff;
   border: 1px solid transparent;
+}
+
 .follow-btn {
   padding: 8px 16px;
   border-radius: 18px;
