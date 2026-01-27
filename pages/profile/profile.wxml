@@ -147,7 +147,7 @@
       <text class="share-desc">一键生成练习摘要，分享你的坚持</text>
     </view>
     <view class="share-actions">
-      <button class="share-btn" bindtap="onShowShareModal">立即分享</button>
+      <button class="share-btn small" bindtap="onShowShareModal">立即分享</button>
     </view>
   </view>
 
