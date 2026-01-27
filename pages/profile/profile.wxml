@@ -143,8 +143,8 @@
   <!-- 分享打卡记录 -->
   <view class="share-card card">
     <view class="share-info">
-      <text class="share-title">分享打卡记录</text>
-      <text class="share-desc">一键生成练习摘要，分享你的坚持</text>
+      <text class="share-title">分享我的打卡</text>
+      <text class="share-desc">生成习琴摘要，分享坚持</text>
     </view>
     <view class="share-actions">
       <button class="share-btn small" bindtap="onShowShareModal">立即分享</button>
@@ -156,19 +156,15 @@
     <view class="action-grid">
       <button class="menu-item" bindtap="openOfficialAccount">
         <text class="menu-title">关注公众号</text>
-        <text class="menu-desc">更新通知与活动</text>
       </button>
       <button class="menu-item" bindtap="onShowDonate">
         <text class="menu-title">赞赏支持</text>
-        <text class="menu-desc">感谢你的鼓励</text>
       </button>
       <button class="menu-item" bindtap="onAbout">
         <text class="menu-title">关于小程序</text>
-        <text class="menu-desc">版本信息与说明</text>
       </button>
       <button class="menu-item danger" bindtap="onClearAllData">
         <text class="menu-title">清空所有数据</text>
-        <text class="menu-desc">谨慎操作不可撤回</text>
       </button>
     </view>
   </view>
@@ -200,7 +196,7 @@
       </view>
       
       <view wx:if="{{shareStats}}" class="share-stats">
-        <text class="share-title">数据摘要</text>
+        <text class="share-section-title">数据摘要</text>
         <text>当日时长: {{shareStats.dayTotalMinutes}} 分钟</text>
         <text>当日打卡: {{shareStats.daySessions}} 次</text>
         <text>近 7 天累计: {{shareStats.weekTotalHours}} 小时（{{shareStats.weekDays}} 天 · {{shareStats.weekSessions}} 次）</text>
@@ -208,7 +204,7 @@
       </view>
       
       <view class="share-preview">
-        <text class="share-title">分享内容预览:</text>
+        <text class="share-section-title">分享内容预览:</text>
         <textarea 
           value="{{shareContent}}"
           disabled

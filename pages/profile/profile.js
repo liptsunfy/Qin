@@ -47,7 +47,6 @@ function createCompatCtx(ctx) {
     closePath() { ctx.closePath(); },
     fill() { ctx.fill(); },
     stroke() { ctx.stroke(); },
-    drawImage(img, x, y, w, h) { ctx.drawImage(img, x, y, w, h); },
     measureText(t) { return ctx.measureText(t); }
   };
 }
