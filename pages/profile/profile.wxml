@@ -148,7 +148,8 @@
     </view>
     <view class="share-actions">
       <button class="share-btn small" bindtap="onShowShareModal">立即分享</button>
-    <button class="share-btn" bindtap="onShowShareModal">立即分享</button>
+      <button class="share-btn" bindtap="onShowShareModal">立即分享</button>
+    </view>
   </view>
 
   <!-- 功能按钮组 -->
