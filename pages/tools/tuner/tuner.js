@@ -34,6 +34,7 @@ Page({
     this.applyPreset(0);
     this.updateTuningFeedback(true);
     this.lastFrameAt = 0;
+    this.startListening();
   },
 
   onUnload() {

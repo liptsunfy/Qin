@@ -459,6 +459,11 @@
   color: #888;
 }
 
+.share-actions {
+  display: flex;
+  align-items: center;
+}
+
 .share-btn {
   padding: 8px 16px;
   border-radius: 18px;
@@ -496,25 +501,45 @@
 }
 
 .action-grid {
-  margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.action-grid .btn {
+.menu-item {
   margin: 0;
-}
-
-.action-buttons .btn-secondary {
-  border: 1px solid #eee;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
   background: #fafafa;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.action-buttons .btn-secondary.danger {
-  border-color: #ff4444;
+.menu-item:active {
+  background: #f0f0f0;
+}
+
+.menu-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.menu-desc {
+  font-size: 11px;
+  color: #8a8a8a;
+}
+
+.menu-item.danger {
+  border-color: #ffd9d9;
+  background: #fff7f7;
+}
+
+.menu-item.danger .menu-title {
   color: #ff4444;
-  background: white;
 }
 
 /* 模态框内容 */

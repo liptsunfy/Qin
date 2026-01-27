@@ -125,7 +125,7 @@
 .record-item {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 18rpx;
   padding: 20rpx 0;
   border-bottom: 1rpx solid #f0f0f0;
 }
@@ -134,17 +134,18 @@
   border-bottom: 0;
 }
 
+.record-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  align-items: center;
+}
+
 .record-info {
   display: flex;
   flex-direction: column;
-  gap: 10rpx;
-}
-
-.record-title {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  flex-wrap: wrap;
+  gap: 8rpx;
+  flex: 1;
 }
 
 .record-name {
@@ -153,20 +154,9 @@
   color: #2a2a2a;
 }
 
-.record-tag {
-  font-size: 20rpx;
-  color: #5c6cff;
-  background: #eef1ff;
-  padding: 4rpx 12rpx;
-  border-radius: 999rpx;
-}
-
 .record-meta {
   font-size: 22rpx;
   color: #8a8a8a;
-  display: flex;
-  gap: 16rpx;
-  flex-wrap: wrap;
 }
 
 .record-actions {
@@ -175,15 +165,23 @@
   flex-wrap: wrap;
 }
 
-.icon-btn {
-  padding: 8rpx 18rpx;
+.play-btn {
+  padding: 10rpx 22rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5c6cff, #7b7bff);
+}
+
+.chip-btn {
+  padding: 8rpx 16rpx;
   border-radius: 16rpx;
   font-size: 22rpx;
   color: #5c6cff;
   background: #f1f3ff;
 }
 
-.icon-btn.danger {
+.chip-btn.danger {
   color: #ff6b6b;
   background: #ffecec;
 }
