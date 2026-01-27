@@ -168,7 +168,7 @@ Page({
 
   updateTuningFeedback(reset = false) {
     if (!reset && this.data.isListening) return;
-    const deviation = Number((Math.random() * 100 - 50).toFixed(1));
+    const deviation = 0;
     const clamped = Math.max(-50, Math.min(50, deviation));
     const { statusText, statusLevel } = this.getStatusFromDeviation(clamped);
 
@@ -176,6 +176,7 @@ Page({
       tuningValue: clamped,
       cents: clamped,
       currentFrequency: 0,
+      volume: 0,
       statusText,
       statusLevel
     });
@@ -341,17 +342,31 @@ Page({
 
   onFrameRecorded(res) {
     const { frameBuffer } = res;
-    const deviation = this.mockDetectPitch(frameBuffer);
-    const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
+    const detection = this.detectPitch(frameBuffer);
+    if (!detection) {
+      this.setData({
+        tuningValue: 0,
+        cents: 0,
+        currentFrequency: 0,
+        volume: 0,
+        statusText: '未检测到稳定音高',
+        statusLevel: 'idle'
+      });
+      return;
+    }
+    const { frequency, volume } = detection;
     const stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
     const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
-    const currentFrequency = Number((targetFrequency * Math.pow(2, deviation / 1200)).toFixed(2));
+    const deviation = this.frequencyToCents(frequency, targetFrequency);
+    const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
+    const currentFrequency = Number(frequency.toFixed(2));
     this.lastFrameAt = Date.now();
 
     this.setData({
       tuningValue: deviation,
       cents: deviation,
       currentFrequency,
+      volume,
       statusText,
       statusLevel
     });
@@ -361,9 +376,83 @@ Page({
     }
   },
 
-  mockDetectPitch(buffer) {
-    if (!buffer) return 0;
-    const deviation = Math.random() * 12 - 6;
-    return Number(deviation.toFixed(1));
+  detectPitch(buffer) {
+    if (!buffer) return null;
+    const data = new Int16Array(buffer);
+    if (!data.length) return null;
+    const sampleRate = 44100;
+    const floatBuffer = new Float32Array(data.length);
+    let rms = 0;
+    for (let i = 0; i < data.length; i += 1) {
+      const value = data[i] / 32768;
+      floatBuffer[i] = value;
+      rms += value * value;
+    }
+    rms = Math.sqrt(rms / data.length);
+    if (rms < 0.01) {
+      return null;
+    }
+    const frequency = this.autoCorrelate(floatBuffer, sampleRate);
+    if (!frequency || frequency === -1) {
+      return null;
+    }
+    const volume = Math.min(100, Math.round(rms * 200));
+    return { frequency, volume };
+  },
+
+  autoCorrelate(buffer, sampleRate) {
+    const size = buffer.length;
+    const correlations = new Array(size).fill(0);
+    let start = 0;
+    let end = size - 1;
+    const threshold = 0.2;
+
+    while (start < size / 2 && Math.abs(buffer[start]) < threshold) start += 1;
+    while (end > size / 2 && Math.abs(buffer[end]) < threshold) end -= 1;
+
+    const trimmed = buffer.slice(start, end);
+    const trimmedSize = trimmed.length;
+    if (trimmedSize < 2) return -1;
+
+    for (let offset = 0; offset < trimmedSize; offset += 1) {
+      let sum = 0;
+      for (let i = 0; i < trimmedSize - offset; i += 1) {
+        sum += trimmed[i] * trimmed[i + offset];
+      }
+      correlations[offset] = sum;
+    }
+
+    let dip = 0;
+    while (dip < trimmedSize - 1 && correlations[dip] > correlations[dip + 1]) dip += 1;
+
+    let maxVal = -1;
+    let maxPos = -1;
+    for (let i = dip; i < trimmedSize; i += 1) {
+      if (correlations[i] > maxVal) {
+        maxVal = correlations[i];
+        maxPos = i;
+      }
+    }
+
+    if (maxPos <= 0) return -1;
+    let t0 = maxPos;
+    if (maxPos < trimmedSize - 1) {
+      const x1 = correlations[maxPos - 1];
+      const x2 = correlations[maxPos];
+      const x3 = correlations[maxPos + 1];
+      const a = (x1 + x3 - 2 * x2) / 2;
+      const b = (x3 - x1) / 2;
+      if (a) {
+        t0 = t0 - b / (2 * a);
+      }
+    }
+
+    return sampleRate / t0;
+  },
+
+  frequencyToCents(current, target) {
+    if (!current || !target) return 0;
+    const cents = 1200 * Math.log2(current / target);
+    return Number(Math.max(-50, Math.min(50, cents)).toFixed(1));
   }
 });
