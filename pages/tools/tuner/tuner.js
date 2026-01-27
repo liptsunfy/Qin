@@ -217,6 +217,8 @@ Page({
     this.stopListening(false);
     this.ensureRecordPermission()
       .then(() => {
+        const sampleRate = 44100;
+        this.sampleRate = sampleRate;
         this.setData({
           isListening: true,
           statusText: '正在监听音高…',
@@ -226,10 +228,12 @@ Page({
         this.frequencyHistory = [];
         this.recorderManager.start({
           format: 'PCM',
-          sampleRate: 44100,
+          sampleRate,
           numberOfChannels: 1,
           encodeBitRate: 96000,
-          frameSize: 8
+          frameSize: 10,
+          duration: 10 * 60 * 1000,
+          audioSource: 'auto'
         });
         this.listenTimer = setInterval(() => {
           const now = Date.now();
@@ -422,7 +426,7 @@ Page({
     if (!buffer) return null;
     const data = new Int16Array(buffer);
     if (!data.length) return null;
-    const sampleRate = 44100;
+    const sampleRate = this.sampleRate || 44100;
     const floatBuffer = new Float32Array(data.length);
     let rms = 0;
     for (let i = 0; i < data.length; i += 1) {
@@ -434,7 +438,7 @@ Page({
     if (rms < 0.01) {
       return null;
     }
-    const frequency = this.autoCorrelate(floatBuffer, sampleRate);
+    const frequency = this.autoCorrelate(floatBuffer, sampleRate, rms);
     if (!frequency || frequency === -1) {
       return null;
     }
@@ -456,54 +460,39 @@ Page({
     return sorted[mid];
   },
 
-  autoCorrelate(buffer, sampleRate) {
+  autoCorrelate(buffer, sampleRate, rms) {
     const size = buffer.length;
-    const correlations = new Array(size).fill(0);
-    let start = 0;
-    let end = size - 1;
-    const threshold = 0.2;
+    const maxSamples = Math.floor(size / 2);
+    if (!maxSamples) return -1;
 
-    while (start < size / 2 && Math.abs(buffer[start]) < threshold) start += 1;
-    while (end > size / 2 && Math.abs(buffer[end]) < threshold) end -= 1;
+    const correlationThreshold = Math.max(0.1, Math.min(0.9, rms * 6));
+    let bestOffset = -1;
+    let bestCorrelation = 0;
+    let lastCorrelation = 1;
+    const correlations = new Array(maxSamples).fill(0);
 
-    const trimmed = buffer.slice(start, end);
-    const trimmedSize = trimmed.length;
-    if (trimmedSize < 2) return -1;
-
-    for (let offset = 0; offset < trimmedSize; offset += 1) {
-      let sum = 0;
-      for (let i = 0; i < trimmedSize - offset; i += 1) {
-        sum += trimmed[i] * trimmed[i + offset];
+    for (let offset = 0; offset < maxSamples; offset += 1) {
+      let correlation = 0;
+      for (let i = 0; i < maxSamples; i += 1) {
+        correlation += Math.abs(buffer[i] - buffer[i + offset]);
       }
-      correlations[offset] = sum;
+      correlation = 1 - (correlation / maxSamples);
+      correlations[offset] = correlation;
+
+      if (correlation > correlationThreshold && correlation > lastCorrelation) {
+        bestCorrelation = correlation;
+        bestOffset = offset;
+      } else if (bestCorrelation > correlationThreshold && correlation < lastCorrelation && bestOffset > 0) {
+        const shift = (correlations[bestOffset + 1] - correlations[bestOffset - 1]) / correlations[bestOffset];
+        return sampleRate / (bestOffset + (shift || 0));
+      }
+      lastCorrelation = correlation;
     }
 
-    let dip = 0;
-    while (dip < trimmedSize - 1 && correlations[dip] > correlations[dip + 1]) dip += 1;
-
-    let maxVal = -1;
-    let maxPos = -1;
-    for (let i = dip; i < trimmedSize; i += 1) {
-      if (correlations[i] > maxVal) {
-        maxVal = correlations[i];
-        maxPos = i;
-      }
+    if (bestOffset > 0) {
+      return sampleRate / bestOffset;
     }
-
-    if (maxPos <= 0) return -1;
-    let t0 = maxPos;
-    if (maxPos < trimmedSize - 1) {
-      const x1 = correlations[maxPos - 1];
-      const x2 = correlations[maxPos];
-      const x3 = correlations[maxPos + 1];
-      const a = (x1 + x3 - 2 * x2) / 2;
-      const b = (x3 - x1) / 2;
-      if (a) {
-        t0 = t0 - b / (2 * a);
-      }
-    }
-
-    return sampleRate / t0;
+    return -1;
   },
 
   frequencyToCents(current, target) {

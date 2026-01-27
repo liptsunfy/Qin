@@ -1,0 +1,6 @@
+<view class="webview-page">
+  <webview wx:if="{{url}}" src="{{url}}"></webview>
+  <view wx:else class="webview-empty">
+    <text>链接加载失败，请稍后再试。</text>
+  </view>
+</view>
