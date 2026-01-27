@@ -45,23 +45,25 @@ Page({
   },
 
   // 加载数据
-  loadData() {
+  async loadData() {
     const today = DateUtil.getToday();
     const weekday = DateUtil.getWeekday(today);
     const encouragePhrase = EncourageManager.getRandomPhrase();
-    
+
+    const allRecords = await CheckinManager.getAllRecordsAsync();
+
     // 获取今天所有记录
-    const todayRecords = CheckinManager.getRecordsByDate(today);
+    const todayRecords = CheckinManager.getRecordsByDateFromRecords(allRecords, today);
     const hasCheckedIn = todayRecords.length > 0;
-    const todayTotalDuration = CheckinManager.getTotalDurationByDate(today);
-    
+    const todayTotalDuration = CheckinManager.getTotalDurationByDateFromRecords(allRecords, today);
+
     // 计算连续打卡天数
-    const continuousDays = StatsManager.getContinuousDays();
+    const continuousDays = StatsManager.getContinuousDaysFromRecords(allRecords);
     
     // 获取本周数据
     const weekDates = DateUtil.getWeekDates();
     const weekRecords = weekDates.map(date => {
-      const records = CheckinManager.getRecordsByDate(date);
+      const records = CheckinManager.getRecordsByDateFromRecords(allRecords, date);
       const totalDuration = records.reduce((sum, r) => sum + (r.duration || 0), 0);
       return {
         date,
@@ -75,7 +77,6 @@ Page({
     
     
     // 常用曲目：按历史记录次数排序（排除空曲目）
-    const allRecords = CheckinManager.getAllRecords();
     const songCountMap = {};
     allRecords.forEach(r => {
       const name = (r.song || '').trim();
@@ -99,7 +100,7 @@ Page({
       }
     });
 
-this.setData({
+    this.setData({
       today,
       weekday,
       encouragePhrase,

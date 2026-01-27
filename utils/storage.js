@@ -32,6 +32,25 @@ const Storage = {
     }
   },
 
+  // 异步读取数据
+  getItemAsync(key, defaultValue = null) {
+    return new Promise((resolve) => {
+      try {
+        wx.getStorage({
+          key,
+          success: (res) => {
+            const value = res && Object.prototype.hasOwnProperty.call(res, 'data') ? res.data : '';
+            resolve(value !== '' ? value : defaultValue);
+          },
+          fail: () => resolve(defaultValue)
+        });
+      } catch (e) {
+        Logger.error('Storage.getItemAsync', '读取数据失败:', key, e);
+        resolve(defaultValue);
+      }
+    });
+  },
+
   // 删除数据
   removeItem(key) {
     try {
@@ -95,10 +114,33 @@ const CheckinManager = {
     return Storage.getItem(STORAGE_KEYS.CHECKIN_RECORDS, []);
   },
 
+  // 异步获取所有打卡记录
+  getAllRecordsAsync() {
+    return Storage.getItemAsync(STORAGE_KEYS.CHECKIN_RECORDS, []);
+  },
+
+  // 从已有记录中过滤指定日期
+  getRecordsByDateFromRecords(records, date) {
+    if (!Array.isArray(records)) return [];
+    return records.filter(record => record.date === date);
+  },
+
+  // 从已有记录中过滤指定日期范围
+  getRecordsByRangeFromRecords(records, startDate, endDate) {
+    if (!Array.isArray(records)) return [];
+    return records.filter(record => record.date >= startDate && record.date <= endDate);
+  },
+
+  // 从已有记录中计算指定日期的总练习时长
+  getTotalDurationByDateFromRecords(records, date) {
+    const dayRecords = this.getRecordsByDateFromRecords(records, date);
+    return dayRecords.reduce((total, record) => total + (record.duration || 0), 0);
+  },
+
   // 获取指定日期的所有记录
   getRecordsByDate(date) {
     const records = this.getAllRecords();
-    return records.filter(record => record.date === date);
+    return this.getRecordsByDateFromRecords(records, date);
   },
 
   // 获取指定日期的最后一条记录（保持兼容性）
@@ -109,16 +151,14 @@ const CheckinManager = {
 
   // 获取指定日期的总练习时长
   getTotalDurationByDate(date) {
-    const records = this.getRecordsByDate(date);
-    return records.reduce((total, record) => total + (record.duration || 0), 0);
+    const records = this.getAllRecords();
+    return this.getTotalDurationByDateFromRecords(records, date);
   },
 
   // 获取日期范围内的记录
   getRecordsByRange(startDate, endDate) {
     const records = this.getAllRecords();
-    return records.filter(record => {
-      return record.date >= startDate && record.date <= endDate;
-    });
+    return this.getRecordsByRangeFromRecords(records, startDate, endDate);
   },
 
   // 获取最近N天的记录
@@ -168,6 +208,18 @@ const UserManager = {
     return Storage.getItem(STORAGE_KEYS.USER_INFO, defaultInfo);
   },
 
+  // 异步获取用户信息
+  async getUserInfoAsync() {
+    const defaultInfo = {
+      nickname: '古琴爱好者',
+      avatar: '/images/default-avatar.png',
+      joinDate: CheckinManager.getToday(),
+      signature: '日习一操，功不唐捐'
+    };
+
+    return Storage.getItemAsync(STORAGE_KEYS.USER_INFO, defaultInfo);
+  },
+
   // 更新用户信息
   updateUserInfo(info) {
     const currentInfo = this.getUserInfo();
@@ -208,14 +260,22 @@ const StatsManager = {
   // 计算总天数（有练习的天数）
   getTotalDays() {
     const records = CheckinManager.getAllRecords();
-    const uniqueDates = new Set(records.map(r => r.date));
+    return this.getTotalDaysFromRecords(records);
+  },
+
+  getTotalDaysFromRecords(records) {
+    const uniqueDates = new Set((records || []).map(r => r.date));
     return uniqueDates.size;
   },
 
   // 计算总时长（分钟）
   getTotalDuration() {
     const records = CheckinManager.getAllRecords();
-    return records.reduce((total, record) => total + (record.duration || 0), 0);
+    return this.getTotalDurationFromRecords(records);
+  },
+
+  getTotalDurationFromRecords(records) {
+    return (records || []).reduce((total, record) => total + (record.duration || 0), 0);
   },
 
   // 计算总小时数
@@ -224,11 +284,20 @@ const StatsManager = {
     return Math.round(totalMinutes / 60 * 10) / 10;
   },
 
+  getTotalHoursFromRecords(records) {
+    const totalMinutes = this.getTotalDurationFromRecords(records);
+    return Math.round(totalMinutes / 60 * 10) / 10;
+  },
+
   // 计算连续打卡天数
   getContinuousDays() {
     const records = CheckinManager.getAllRecords();
+    return this.getContinuousDaysFromRecords(records);
+  },
+
+  getContinuousDaysFromRecords(records) {
     // 用 Set 做 membership 判断，避免 dates.includes 导致 O(n^2)
-    const uniqueDates = [...new Set(records.map(r => r.date))];
+    const uniqueDates = [...new Set((records || []).map(r => r.date))];
     const dateSet = new Set(uniqueDates);
     
     if (dateSet.size === 0) return 0;
@@ -261,11 +330,15 @@ const StatsManager = {
     const endDateStr = `${year}-${month.toString().padStart(2, '0')}-${endDate.getDate().toString().padStart(2, '0')}`;
     
     const records = CheckinManager.getRecordsByRange(startDate, endDateStr);
-    const days = new Set(records.map(r => r.date)).size; // 有练习的天数
-    const totalDuration = records.reduce((sum, r) => sum + (r.duration || 0), 0);
-    const totalRecords = records.length; // 总记录数
+    return this.getMonthlyStatsFromRecords(records);
+  },
+
+  getMonthlyStatsFromRecords(records) {
+    const days = new Set((records || []).map(r => r.date)).size; // 有练习的天数
+    const totalDuration = (records || []).reduce((sum, r) => sum + (r.duration || 0), 0);
+    const totalRecords = (records || []).length; // 总记录数
     const avgDuration = days > 0 ? Math.round(totalDuration / days * 10) / 10 : 0;
-    
+
     return {
       days,
       totalDuration,
