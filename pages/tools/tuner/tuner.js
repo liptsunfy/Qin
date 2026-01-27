@@ -294,6 +294,7 @@ Page({
               statusText: '未检测到稳定音高',
               statusLevel: 'idle',
               stabilityText: '无信号'
+              statusLevel: 'idle'
             });
             return;
           }
@@ -451,6 +452,7 @@ Page({
       return;
     }
     const { frequency, volume } = detection;
+    const smoothedFrequency = this.smoothFrequency(frequency);
     const stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
     const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
     const correctedFrequency = this.normalizeFrequency(frequency, targetFrequency);
@@ -459,6 +461,9 @@ Page({
     const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
     const currentFrequency = Number(smoothedFrequency.toFixed(2));
     const stabilityText = this.getStabilityText();
+    const deviation = this.frequencyToCents(smoothedFrequency, targetFrequency);
+    const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
+    const currentFrequency = Number(smoothedFrequency.toFixed(2));
     this.lastFrameAt = Date.now();
 
     this.setData({
