@@ -584,6 +584,21 @@ Page({
     });
   },
 
+  openOfficialAccount() {
+    const url = 'https://mp.weixin.qq.com/s/li3f_Nb7CN9JjcsnOv717Q';
+    wx.navigateTo({
+      url: `/pages/webview/webview?url=${encodeURIComponent(url)}`,
+      fail: () => {
+        wx.setClipboardData({
+          data: url,
+          success: () => {
+            wx.showToast({ title: '链接已复制', icon: 'none' });
+          }
+        });
+      }
+    });
+  },
+
 
   goWeeklyReview() {
     wx.navigateTo({

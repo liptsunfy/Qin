@@ -26,14 +26,21 @@
 
     <view wx:for="{{recordings}}" wx:key="id" class="record-item">
       <view class="record-info">
-        <text class="record-name">{{item.name}}</text>
-        <text class="record-meta">{{item.durationText}}</text>
+        <view class="record-title">
+          <text class="record-name">{{item.name}}</text>
+          <text class="record-tag">{{item.durationText}}</text>
+        </view>
+        <view class="record-meta">
+          <text>{{item.createTimeText}}</text>
+          <text wx:if="{{item.savedAtText}}">已保存 {{item.savedAtText}}</text>
+        </view>
       </view>
       <view class="record-actions">
         <button class="icon-btn" data-record="{{item}}" bindtap="togglePlay">
           {{playingId === item.id ? '停止' : '播放'}}
         </button>
-        <button class="icon-btn" data-record="{{item}}" bindtap="shareRecording">分享</button>
+        <button class="icon-btn" data-record="{{item}}" bindtap="saveRecording">保存</button>
+        <button class="icon-btn" data-record="{{item}}" bindtap="renameRecording">重命名</button>
         <button class="icon-btn danger" data-record="{{item}}" bindtap="deleteRecording">删除</button>
       </view>
     </view>

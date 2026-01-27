@@ -415,6 +415,40 @@
   line-height: 1.4;
 }
 
+/* 关注公众号 */
+.follow-card {
+  margin: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.follow-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.follow-desc {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #888;
+}
+
+.follow-btn {
+  padding: 8px 16px;
+  border-radius: 18px;
+  font-size: 13px;
+  background: #f3f5ff;
+  color: #5c6cff;
+  border: 1px solid #e5e9ff;
+}
+
 /* 功能按钮 */
 .action-buttons {
   margin: 12px;
@@ -425,7 +459,6 @@
 }
 
 .action-buttons .btn {
-  margin: 10px 0;
   width: 100%;
   border-radius: 12px;
   font-size: 15px;
@@ -434,8 +467,15 @@
   line-height: 1.2;
 }
 
-.action-buttons .btn:last-child {
-  margin-bottom: 0;
+.action-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.action-grid .btn {
+  margin: 0;
 }
 
 .action-buttons .btn-secondary {
@@ -443,7 +483,7 @@
   background: #fafafa;
 }
 
-.action-buttons .btn-secondary[style*="color: #ff4444"] {
+.action-buttons .btn-secondary.danger {
   border-color: #ff4444;
   color: #ff4444;
   background: white;
