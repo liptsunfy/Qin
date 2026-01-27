@@ -112,10 +112,7 @@ Page({
   onLoad(options) {
     this.initShareCanvas2D();
 
-    this.loadUserData();
-    this.loadStats();
-    this.loadCalendarData();
-    this.loadSongStats(); // 新增：加载曲目统计
+    this.loadAllData();
     
     if (options.tab === 'records') {
       this.showAllRecords();
@@ -125,10 +122,7 @@ Page({
   },
 
   onShow() {
-    this.loadUserData();
-    this.loadStats();
-    this.loadCalendarData();
-    this.loadSongStats(); // 新增：重新加载曲目统计
+    this.loadAllData();
   },
 
   // 初始化 Canvas 2D（同层渲染）。可重复调用；内部会复用已创建的 canvas/ctx
@@ -201,16 +195,17 @@ Page({
   },
 
   // 加载用户数据
-  loadUserData() {
-    const userInfo = UserManager.getUserInfo();
+  async loadUserData() {
+    const userInfo = await UserManager.getUserInfoAsync();
     this.setData({ userInfo });
   },
 
   // 加载统计数据
-  loadStats() {
-    const totalDays = StatsManager.getTotalDays();
-    const totalHours = StatsManager.getTotalHours();
-    const continuousDays = StatsManager.getContinuousDays();
+  loadStats(records) {
+    const sourceRecords = records || CheckinManager.getAllRecords();
+    const totalDays = StatsManager.getTotalDaysFromRecords(sourceRecords);
+    const totalHours = StatsManager.getTotalHoursFromRecords(sourceRecords);
+    const continuousDays = StatsManager.getContinuousDaysFromRecords(sourceRecords);
     
     this.setData({
       totalDays,
@@ -220,10 +215,23 @@ Page({
   },
 
   // 新增：加载曲目统计
-  loadSongStats() {
-    const records = CheckinManager.getAllRecords();
-    const songStats = SongStats.computeSongStats(records);
+  loadSongStats(records) {
+    const sourceRecords = records || CheckinManager.getAllRecords();
+    const songStats = SongStats.computeSongStats(sourceRecords);
     this.setData({ songStats });
+  },
+
+  // 异步统一加载用户与打卡数据
+  async loadAllData() {
+    const [userInfo, records] = await Promise.all([
+      UserManager.getUserInfoAsync(),
+      CheckinManager.getAllRecordsAsync()
+    ]);
+
+    this.setData({ userInfo });
+    this.loadStats(records);
+    this.loadCalendarData(records);
+    this.loadSongStats(records);
   },
 
   // 显示曲目统计页面
@@ -304,16 +312,14 @@ Page({
           });
           
           // 重新加载数据
-          this.loadStats();
-          this.loadCalendarData();
-          this.loadSongStats();
+          this.loadAllData();
         }
       }
     });
   },
 
   // 加载日历数据
-  loadCalendarData() {
+  loadCalendarData(records) {
     const { currentYear, currentMonth } = this.data;
     
     const monthStr = currentMonth.toString().padStart(2, '0');
@@ -321,12 +327,13 @@ Page({
     const endDate = new Date(currentYear, currentMonth, 0);
     const endDateStr = `${currentYear}-${monthStr}-${endDate.getDate().toString().padStart(2, '0')}`;
     
-    const records = CheckinManager.getRecordsByRange(startDate, endDateStr);
+    const sourceRecords = records || CheckinManager.getAllRecords();
+    const monthRangeRecords = CheckinManager.getRecordsByRangeFromRecords(sourceRecords, startDate, endDateStr);
     
     // 按日期聚合，兼容“同一天多次打卡”的数据模型
     // monthRecords[date] = { count, totalDuration, records: [...] }
     const monthRecords = {};
-    records.forEach((record) => {
+    monthRangeRecords.forEach((record) => {
       if (!record || !record.date) return;
       if (!monthRecords[record.date]) {
         monthRecords[record.date] = {
@@ -340,7 +347,7 @@ Page({
       monthRecords[record.date].records.push(record);
     });
     
-    const monthlyStats = StatsManager.getMonthlyStats(currentYear, currentMonth);
+    const monthlyStats = StatsManager.getMonthlyStatsFromRecords(monthRangeRecords);
     const calendarCells = this.generateCalendarCells(currentYear, currentMonth, monthRecords);
     
     this.setData({
@@ -448,9 +455,7 @@ Page({
             title: '删除成功',
             icon: 'success'
           });
-          this.loadStats();
-          this.loadCalendarData();
-          this.loadSongStats();
+          this.loadAllData();
         }
       }
     });
