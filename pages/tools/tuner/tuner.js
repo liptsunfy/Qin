@@ -232,6 +232,7 @@ Page({
           numberOfChannels: 1,
           encodeBitRate: 96000,
           frameSize: 20,
+          frameSize: 10,
           duration: 10 * 60 * 1000,
           audioSource: 'auto'
         });
@@ -440,6 +441,8 @@ Page({
     }
     const frequency = this.autoCorrelate(floatBuffer, sampleRate);
     if (!frequency || frequency === -1 || frequency < 50 || frequency > 2000) {
+    const frequency = this.autoCorrelate(floatBuffer, sampleRate, rms);
+    if (!frequency || frequency === -1) {
       return null;
     }
     const volume = Math.min(100, Math.round(rms * 200));
@@ -460,7 +463,7 @@ Page({
     return sorted[mid];
   },
 
-  autoCorrelate(buffer, sampleRate) {
+  autoCorrelate(buffer, sampleRate, rms) {
     const size = buffer.length;
     if (size < 32) return -1;
 
@@ -499,7 +502,31 @@ Page({
       if (correlations[i] > peakValue) {
         peakValue = correlations[i];
         peakIndex = i;
+    const maxSamples = Math.floor(size / 2);
+    if (!maxSamples) return -1;
+
+    const correlationThreshold = Math.max(0.1, Math.min(0.9, rms * 6));
+    let bestOffset = -1;
+    let bestCorrelation = 0;
+    let lastCorrelation = 1;
+    const correlations = new Array(maxSamples).fill(0);
+
+    for (let offset = 0; offset < maxSamples; offset += 1) {
+      let correlation = 0;
+      for (let i = 0; i < maxSamples; i += 1) {
+        correlation += Math.abs(buffer[i] - buffer[i + offset]);
       }
+      correlation = 1 - (correlation / maxSamples);
+      correlations[offset] = correlation;
+
+      if (correlation > correlationThreshold && correlation > lastCorrelation) {
+        bestCorrelation = correlation;
+        bestOffset = offset;
+      } else if (bestCorrelation > correlationThreshold && correlation < lastCorrelation && bestOffset > 0) {
+        const shift = (correlations[bestOffset + 1] - correlations[bestOffset - 1]) / correlations[bestOffset];
+        return sampleRate / (bestOffset + (shift || 0));
+      }
+      lastCorrelation = correlation;
     }
 
     if (peakIndex <= 0) return -1;
@@ -514,9 +541,10 @@ Page({
       if (a) {
         t0 = peakIndex - b / (2 * a);
       }
+    if (bestOffset > 0) {
+      return sampleRate / bestOffset;
     }
-
-    return sampleRate / t0;
+    return -1;
   },
 
   frequencyToCents(current, target) {

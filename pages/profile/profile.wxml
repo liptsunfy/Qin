@@ -147,12 +147,21 @@
       <text class="share-desc">一键生成练习摘要，分享你的坚持</text>
     </view>
     <button class="share-btn" bindtap="onShowShareModal">立即分享</button>
+  <!-- 关注公众号 -->
+  <view class="follow-card card">
+    <view class="follow-info">
+      <text class="follow-title">关注公众号</text>
+      <text class="follow-desc">获取练琴技巧、更新通知与活动信息</text>
+    </view>
+    <button class="follow-btn" bindtap="openOfficialAccount">立即前往</button>
   </view>
 
   <!-- 功能按钮组 -->
   <view class="action-buttons card">
     <view class="action-grid">
       <button class="btn btn-secondary" bindtap="openOfficialAccount">关注公众号</button>
+    <button class="btn btn-primary" bindtap="onShowShareModal">分享打卡记录</button>
+    <view class="action-grid">
       <button class="btn btn-secondary" bindtap="onShowDonate">赞赏支持</button>
       <button class="btn btn-secondary" bindtap="onAbout">关于小程序</button>
       <button class="btn btn-secondary danger" bindtap="onClearAllData">清空所有数据</button>
