@@ -147,8 +147,8 @@
       <text class="share-desc">一键生成练习摘要，分享你的坚持</text>
     </view>
     <view class="share-actions">
-      <button class="share-btn small" bindtap="onShowShareModal">立即分享</button>
-    <button class="share-btn" bindtap="onShowShareModal">立即分享</button>
+      <button class="share-btn" bindtap="onShowShareModal">立即分享</button>
+    </view>
   </view>
 
   <!-- 功能按钮组 -->
@@ -170,9 +170,6 @@
         <text class="menu-title">清空所有数据</text>
         <text class="menu-desc">谨慎操作不可撤回</text>
       </button>
-      <button class="btn btn-secondary" bindtap="onShowDonate">赞赏支持</button>
-      <button class="btn btn-secondary" bindtap="onAbout">关于小程序</button>
-      <button class="btn btn-secondary danger" bindtap="onClearAllData">清空所有数据</button>
     </view>
   </view>
 
