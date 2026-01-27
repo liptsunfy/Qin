@@ -6,7 +6,11 @@ Page({
     tuningPresets: [],
     tuningPresetNames: [],
     currentPresetIndex: 0,
+    referenceStandards: [],
+    referenceStandardNames: [],
+    referenceStandardIndex: 0,
     a4: 440,
+    sensitivity: 60,
     strings: [
       { id: 1, name: '一弦', note: 'D', octave: '4', tuned: false, frequency: 293.66 },
       { id: 2, name: '二弦', note: 'A', octave: '4', tuned: false, frequency: 440.0 },
@@ -25,11 +29,13 @@ Page({
     autoTune: false,
     isListening: false,
     statusText: '未开始监听',
-    statusLevel: 'idle'
+    statusLevel: 'idle',
+    stabilityText: '等待输入'
   },
 
   onLoad() {
     this.setupPresets();
+    this.setupReferenceStandards();
     this.setupRecorder();
     this.applyPreset(0);
     this.updateTuningFeedback(true);
@@ -40,12 +46,41 @@ Page({
     this.stopListening();
   },
 
+  onHide() {
+    this.stopListening();
+  },
+
+  setupReferenceStandards() {
+    const referenceStandards = [
+      { name: '现代标准', a4: 440, desc: '国际 A4=440Hz' },
+      { name: '国乐合奏', a4: 442, desc: '合奏常用 A4=442Hz' },
+      { name: '丝弦质感', a4: 435, desc: '偏柔和 A4=435Hz' },
+      { name: '低音共鸣', a4: 432, desc: '舒缓 A4=432Hz' }
+    ];
+    this.setData({
+      referenceStandards,
+      referenceStandardNames: referenceStandards.map(item => item.name),
+      referenceStandardIndex: 0,
+      a4: referenceStandards[0].a4
+    });
+  },
+
   setupPresets() {
     const tuningPresets = [
       {
         name: '正调',
         description: '常用五六一二三五六',
         notes: ['D4', 'A4', 'E4', 'B3', 'F4', 'C4', 'G4']
+      },
+      {
+        name: '清角调',
+        description: '清亮明快，二弦上扬',
+        notes: ['D4', 'B4', 'E4', 'B3', 'F4', 'C4', 'G4']
+      },
+      {
+        name: '黄钟调',
+        description: '厚重稳健，四弦偏稳',
+        notes: ['C4', 'G4', 'D4', 'A3', 'E4', 'B3', 'F4']
       },
       {
         name: '紧五弦',
@@ -84,7 +119,7 @@ Page({
     this.recorderManager.onError(() => {
       this.stopListening();
       this.setData({
-        statusText: '录音失败，请重试',
+        statusText: '录音失败，请稍后重试',
         statusLevel: 'idle'
       });
     });
@@ -178,7 +213,8 @@ Page({
       currentFrequency: 0,
       volume: 0,
       statusText,
-      statusLevel
+      statusLevel,
+      stabilityText: '等待输入'
     });
   },
 
@@ -199,6 +235,25 @@ Page({
     });
   },
 
+  onReferenceChange(e) {
+    const index = Number(e.detail.value);
+    const standard = this.data.referenceStandards[index];
+    if (!standard) return;
+    this.setData({
+      referenceStandardIndex: index,
+      a4: standard.a4
+    });
+    this.applyPreset(this.data.currentPresetIndex);
+    this.updateTuningFeedback(true);
+  },
+
+  onSensitivityChange(e) {
+    const value = Number(e.detail.value);
+    this.setData({
+      sensitivity: value
+    });
+  },
+
   onToggleListen() {
     const nextState = !this.data.isListening;
     this.setData({ isListening: nextState });
@@ -216,8 +271,11 @@ Page({
         this.setData({
           isListening: true,
           statusText: '正在监听音高…',
-          statusLevel: 'listening'
+          statusLevel: 'listening',
+          stabilityText: '正在捕捉'
         });
+        this.lastFrameAt = 0;
+        this.frequencyHistory = [];
         this.recorderManager.start({
           format: 'PCM',
           sampleRate: 44100,
@@ -228,13 +286,21 @@ Page({
         this.listenTimer = setInterval(() => {
           const now = Date.now();
           if (!this.lastFrameAt || now - this.lastFrameAt > 1200) {
-            this.updateTuningFeedback(true);
+            this.setData({
+              tuningValue: 0,
+              cents: 0,
+              currentFrequency: 0,
+              volume: 0,
+              statusText: '未检测到稳定音高',
+              statusLevel: 'idle',
+              stabilityText: '无信号'
+            });
+            return;
           }
-          this.updateTuningFeedback(true);
           if (this.data.autoTune) {
             this.maybeAutoAdvance();
           }
-        }, 800);
+        }, 600);
       })
       .catch(() => {
         this.setData({
@@ -261,10 +327,12 @@ Page({
       this.setData({
         isListening: false,
         statusText: '已停止监听',
-        statusLevel: 'idle'
+        statusLevel: 'idle',
+        stabilityText: '已停止'
       });
     }
     this.lastFrameAt = 0;
+    this.frequencyHistory = [];
   },
 
   maybeAutoAdvance() {
@@ -324,15 +392,41 @@ Page({
     return new Promise((resolve, reject) => {
       wx.getSetting({
         success: res => {
-          const hasPermission = res.authSetting['scope.record'];
-          if (hasPermission) {
+          const permission = res.authSetting['scope.record'];
+          if (permission) {
             resolve();
+            return;
+          }
+          if (permission === false) {
+            wx.showModal({
+              title: '需要录音权限',
+              content: '调音器需要麦克风权限，请前往设置开启。',
+              confirmText: '去设置',
+              success: modalRes => {
+                if (modalRes.confirm) {
+                  wx.openSetting();
+                }
+              }
+            });
+            reject();
             return;
           }
           wx.authorize({
             scope: 'scope.record',
             success: resolve,
-            fail: reject
+            fail: () => {
+              wx.showModal({
+                title: '需要录音权限',
+                content: '调音器需要麦克风权限，请前往设置开启。',
+                confirmText: '去设置',
+                success: modalRes => {
+                  if (modalRes.confirm) {
+                    wx.openSetting();
+                  }
+                }
+              });
+              reject();
+            }
           });
         },
         fail: reject
@@ -341,6 +435,7 @@ Page({
   },
 
   onFrameRecorded(res) {
+    if (!this.data.isListening) return;
     const { frameBuffer } = res;
     const detection = this.detectPitch(frameBuffer);
     if (!detection) {
@@ -350,16 +445,20 @@ Page({
         currentFrequency: 0,
         volume: 0,
         statusText: '未检测到稳定音高',
-        statusLevel: 'idle'
+        statusLevel: 'idle',
+        stabilityText: '等待输入'
       });
       return;
     }
     const { frequency, volume } = detection;
     const stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
     const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
-    const deviation = this.frequencyToCents(frequency, targetFrequency);
+    const correctedFrequency = this.normalizeFrequency(frequency, targetFrequency);
+    const smoothedFrequency = this.smoothFrequency(correctedFrequency);
+    const deviation = this.frequencyToCents(smoothedFrequency, targetFrequency);
     const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
-    const currentFrequency = Number(frequency.toFixed(2));
+    const currentFrequency = Number(smoothedFrequency.toFixed(2));
+    const stabilityText = this.getStabilityText();
     this.lastFrameAt = Date.now();
 
     this.setData({
@@ -368,7 +467,8 @@ Page({
       currentFrequency,
       volume,
       statusText,
-      statusLevel
+      statusLevel,
+      stabilityText
     });
 
     if (this.data.autoTune) {
@@ -389,7 +489,7 @@ Page({
       rms += value * value;
     }
     rms = Math.sqrt(rms / data.length);
-    if (rms < 0.01) {
+    if (rms < this.getSensitivityThreshold()) {
       return null;
     }
     const frequency = this.autoCorrelate(floatBuffer, sampleRate);
@@ -398,6 +498,57 @@ Page({
     }
     const volume = Math.min(100, Math.round(rms * 200));
     return { frequency, volume };
+  },
+
+  smoothFrequency(frequency) {
+    if (!frequency) return frequency;
+    if (!this.frequencyHistory) {
+      this.frequencyHistory = [];
+    }
+    this.frequencyHistory.push(frequency);
+    if (this.frequencyHistory.length > 5) {
+      this.frequencyHistory.shift();
+    }
+    const sorted = [...this.frequencyHistory].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted[mid];
+  },
+
+  normalizeFrequency(frequency, targetFrequency) {
+    if (!frequency || !targetFrequency) return frequency;
+    let adjusted = frequency;
+    let iterations = 0;
+    while (adjusted < targetFrequency / 1.8 && iterations < 4) {
+      adjusted *= 2;
+      iterations += 1;
+    }
+    while (adjusted > targetFrequency * 1.8 && iterations < 8) {
+      adjusted /= 2;
+      iterations += 1;
+    }
+    return adjusted;
+  },
+
+  getSensitivityThreshold() {
+    const value = this.data.sensitivity || 60;
+    const clamped = Math.max(0, Math.min(100, value));
+    return 0.02 - (clamped / 100) * 0.015;
+  },
+
+  getStabilityText() {
+    if (!this.frequencyHistory || this.frequencyHistory.length < 3) {
+      return '正在捕捉';
+    }
+    const max = Math.max(...this.frequencyHistory);
+    const min = Math.min(...this.frequencyHistory);
+    const range = max - min;
+    if (range < 1.5) {
+      return '音高稳定';
+    }
+    if (range < 4) {
+      return '轻微波动';
+    }
+    return '音高波动';
   },
 
   autoCorrelate(buffer, sampleRate) {

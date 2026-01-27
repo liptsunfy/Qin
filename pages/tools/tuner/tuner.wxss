@@ -18,7 +18,7 @@
 .status-note{font-size:26rpx;color:#c18b5d;font-weight:600}
 .status-actions{display:flex;align-items:center;gap:10rpx;font-size:22rpx;color:#5c6475;background:#f6f7fb;padding:6rpx 12rpx;border-radius:999rpx}
 .status-toggle{font-size:22rpx;color:#5c6475}
-.status-meta{display:flex;justify-content:space-between;font-size:22rpx;color:#7b8394}
+.status-meta{display:flex;justify-content:space-between;font-size:22rpx;color:#7b8394;gap:12rpx}
 .status-target{font-size:22rpx;color:#7b8394}
 .meter{display:flex;flex-direction:column;gap:10rpx}
 .meter-track{height:24rpx;background:#eef1f6;border-radius:999rpx;position:relative;overflow:hidden}

@@ -15,10 +15,26 @@
       </picker>
     </view>
     <view class="setting-row">
+      <text class="setting-label">调弦标准</text>
+      <picker mode="selector" range="{{referenceStandardNames}}" bindchange="onReferenceChange" disabled="{{!referenceStandardNames.length}}">
+        <view class="setting-value">
+          <text>{{referenceStandardNames[referenceStandardIndex]}}</text>
+          <text class="setting-desc">{{referenceStandards[referenceStandardIndex] ? referenceStandards[referenceStandardIndex].desc : ''}}</text>
+        </view>
+      </picker>
+    </view>
+    <view class="setting-row">
       <text class="setting-label">基准音 A4</text>
       <view class="setting-slider">
         <slider min="415" max="466" step="1" value="{{a4}}" bindchange="onA4Change" />
         <text class="setting-value-text">{{a4}} Hz</text>
+      </view>
+    </view>
+    <view class="setting-row">
+      <text class="setting-label">灵敏度</text>
+      <view class="setting-slider">
+        <slider min="0" max="100" step="5" value="{{sensitivity}}" bindchange="onSensitivityChange" />
+        <text class="setting-value-text">{{sensitivity}}</text>
       </view>
     </view>
     <view class="setting-hint">选择弦位 → 开始监听 → 观察指示条</view>
@@ -42,6 +58,10 @@
     <view class="status-meta">
       <text>偏差 {{cents}} cents</text>
       <text>音量 {{volume}}</text>
+    </view>
+    <view class="status-meta">
+      <text>稳定度 {{stabilityText}}</text>
+      <text>标准 {{referenceStandards[referenceStandardIndex] ? referenceStandards[referenceStandardIndex].name : '--'}}</text>
     </view>
     <text class="status-target">目标频率 {{currentString ? currentString.frequency.toFixed(1) : '--'}} Hz</text>
     <view class="meter">
