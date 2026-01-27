@@ -34,6 +34,7 @@ Page({
     this.applyPreset(0);
     this.updateTuningFeedback(true);
     this.lastFrameAt = 0;
+    this.startListening();
   },
 
   onUnload() {
@@ -231,7 +232,6 @@ Page({
           sampleRate,
           numberOfChannels: 1,
           encodeBitRate: 96000,
-          frameSize: 20,
           frameSize: 10,
           duration: 10 * 60 * 1000,
           audioSource: 'auto'
@@ -439,10 +439,8 @@ Page({
     if (rms < 0.01) {
       return null;
     }
-    const frequency = this.autoCorrelate(floatBuffer, sampleRate);
-    if (!frequency || frequency === -1 || frequency < 50 || frequency > 2000) {
     const frequency = this.autoCorrelate(floatBuffer, sampleRate, rms);
-    if (!frequency || frequency === -1) {
+    if (!frequency || frequency === -1 || frequency < 50 || frequency > 2000) {
       return null;
     }
     const volume = Math.min(100, Math.round(rms * 200));
@@ -463,47 +461,20 @@ Page({
     return sorted[mid];
   },
 
-  autoCorrelate(buffer, sampleRate, rms) {
+  autoCorrelate(buffer, sampleRate, rmsValue) {
     const size = buffer.length;
-    if (size < 32) return -1;
-
-    let rms = 0;
-    for (let i = 0; i < size; i += 1) {
-      rms += buffer[i] * buffer[i];
-    }
-    rms = Math.sqrt(rms / size);
-    if (rms < 0.01) return -1;
-
-    let start = 0;
-    let end = size - 1;
-    const threshold = 0.2;
-    while (start < size / 2 && Math.abs(buffer[start]) < threshold) start += 1;
-    while (end > size / 2 && Math.abs(buffer[end]) < threshold) end -= 1;
-
-    const trimmed = buffer.slice(start, end);
-    const trimmedSize = trimmed.length;
-    if (trimmedSize < 32) return -1;
-
-    const correlations = new Array(trimmedSize).fill(0);
-    for (let lag = 0; lag < trimmedSize; lag += 1) {
-      let sum = 0;
-      for (let i = 0; i < trimmedSize - lag; i += 1) {
-        sum += trimmed[i] * trimmed[i + lag];
-      }
-      correlations[lag] = sum;
-    }
-
-    let dip = 0;
-    while (dip < trimmedSize - 1 && correlations[dip] > correlations[dip + 1]) dip += 1;
-
-    let peakIndex = -1;
-    let peakValue = -Infinity;
-    for (let i = dip; i < trimmedSize; i += 1) {
-      if (correlations[i] > peakValue) {
-        peakValue = correlations[i];
-        peakIndex = i;
     const maxSamples = Math.floor(size / 2);
     if (!maxSamples) return -1;
+
+    let rms = rmsValue;
+    if (typeof rms !== 'number') {
+      rms = 0;
+      for (let i = 0; i < size; i += 1) {
+        rms += buffer[i] * buffer[i];
+      }
+      rms = Math.sqrt(rms / size);
+    }
+    if (rms < 0.01) return -1;
 
     const correlationThreshold = Math.max(0.1, Math.min(0.9, rms * 6));
     let bestOffset = -1;
@@ -523,24 +494,14 @@ Page({
         bestCorrelation = correlation;
         bestOffset = offset;
       } else if (bestCorrelation > correlationThreshold && correlation < lastCorrelation && bestOffset > 0) {
-        const shift = (correlations[bestOffset + 1] - correlations[bestOffset - 1]) / correlations[bestOffset];
+        const upperIndex = Math.min(bestOffset + 1, correlations.length - 1);
+        const lowerIndex = Math.max(bestOffset - 1, 0);
+        const shift = (correlations[upperIndex] - correlations[lowerIndex]) / correlations[bestOffset];
         return sampleRate / (bestOffset + (shift || 0));
       }
       lastCorrelation = correlation;
     }
 
-    if (peakIndex <= 0) return -1;
-
-    let t0 = peakIndex;
-    if (peakIndex < trimmedSize - 1) {
-      const x1 = correlations[peakIndex - 1];
-      const x2 = correlations[peakIndex];
-      const x3 = correlations[peakIndex + 1];
-      const a = (x1 + x3 - 2 * x2) / 2;
-      const b = (x3 - x1) / 2;
-      if (a) {
-        t0 = peakIndex - b / (2 * a);
-      }
     if (bestOffset > 0) {
       return sampleRate / bestOffset;
     }

@@ -5,19 +5,20 @@
   </view>
 
   <view class="card record-card">
-    <view class="timer">{{durationText}}</view>
-    <view class="status">
-      <text wx:if="{{!isRecording}}">准备就绪</text>
-      <text wx:elif="{{isPaused}}">已暂停</text>
-      <text wx:else>录音中...</text>
+    <view class="record-hero">
+      <text class="timer">{{durationText}}</text>
+      <text class="status-text {{isRecording ? (isPaused ? 'paused' : 'recording') : 'idle'}}">
+        {{!isRecording ? '准备就绪' : (isPaused ? '已暂停' : '录音中')}}
+      </text>
     </view>
 
     <view class="actions">
-      <button class="secondary-btn" bindtap="startRecording" wx:if="{{!isRecording}}">开始录音</button>
+      <button class="primary-btn" bindtap="startRecording" wx:if="{{!isRecording}}">开始录音</button>
+      <button class="primary-btn danger" bindtap="stopRecording" wx:if="{{isRecording}}">结束并保存</button>
       <button class="secondary-btn pause" bindtap="pauseRecording" wx:if="{{isRecording && !isPaused}}">暂停</button>
       <button class="secondary-btn" bindtap="resumeRecording" wx:if="{{isRecording && isPaused}}">继续</button>
-      <button class="primary-btn" bindtap="stopRecording" wx:if="{{isRecording}}">保存</button>
     </view>
+    <view class="record-hint">建议在安静环境中录音，声音更清晰。</view>
   </view>
 
   <view class="card list-card">
@@ -25,23 +26,20 @@
     <view wx:if="{{recordings.length === 0}}" class="empty">还没有录音，快来记录第一段声音吧～</view>
 
     <view wx:for="{{recordings}}" wx:key="id" class="record-item">
-      <view class="record-info">
-        <view class="record-title">
+      <view class="record-head">
+        <view class="record-info">
           <text class="record-name">{{item.name}}</text>
-          <text class="record-tag">{{item.durationText}}</text>
+          <text class="record-meta">{{item.durationText}} · {{item.createTimeText}}</text>
+          <text wx:if="{{item.savedAtText}}" class="record-meta">已保存 {{item.savedAtText}}</text>
         </view>
-        <view class="record-meta">
-          <text>{{item.createTimeText}}</text>
-          <text wx:if="{{item.savedAtText}}">已保存 {{item.savedAtText}}</text>
-        </view>
-      </view>
-      <view class="record-actions">
-        <button class="icon-btn" data-record="{{item}}" bindtap="togglePlay">
+        <button class="play-btn" data-record="{{item}}" bindtap="togglePlay">
           {{playingId === item.id ? '停止' : '播放'}}
         </button>
-        <button class="icon-btn" data-record="{{item}}" bindtap="saveRecording">保存</button>
-        <button class="icon-btn" data-record="{{item}}" bindtap="renameRecording">重命名</button>
-        <button class="icon-btn danger" data-record="{{item}}" bindtap="deleteRecording">删除</button>
+      </view>
+      <view class="record-actions">
+        <button class="chip-btn" data-record="{{item}}" bindtap="saveRecording">保存</button>
+        <button class="chip-btn" data-record="{{item}}" bindtap="renameRecording">重命名</button>
+        <button class="chip-btn danger" data-record="{{item}}" bindtap="deleteRecording">删除</button>
       </view>
     </view>
   </view>

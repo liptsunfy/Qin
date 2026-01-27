@@ -417,8 +417,6 @@
 
 /* 分享打卡记录 */
 .share-card {
-/* 关注公众号 */
-.follow-card {
   margin: 12px;
   padding: 16px;
   background: #ffffff;
@@ -435,17 +433,20 @@
 }
 
 .share-title {
-.follow-title {
   font-size: 16px;
   font-weight: 600;
   color: #333;
 }
 
 .share-desc {
-.follow-desc {
   margin-top: 6px;
   font-size: 12px;
   color: #888;
+}
+
+.share-actions {
+  display: flex;
+  align-items: center;
 }
 
 .share-btn {
@@ -455,13 +456,11 @@
   background: linear-gradient(135deg, #5c6cff, #7b7bff);
   color: #ffffff;
   border: 1px solid transparent;
-.follow-btn {
-  padding: 8px 16px;
-  border-radius: 18px;
-  font-size: 13px;
-  background: #f3f5ff;
-  color: #5c6cff;
-  border: 1px solid #e5e9ff;
+}
+
+.share-btn.small {
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 /* 功能按钮 */
@@ -483,25 +482,45 @@
 }
 
 .action-grid {
-  margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.action-grid .btn {
+.menu-item {
   margin: 0;
-}
-
-.action-buttons .btn-secondary {
-  border: 1px solid #eee;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
   background: #fafafa;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.action-buttons .btn-secondary.danger {
-  border-color: #ff4444;
+.menu-item:active {
+  background: #f0f0f0;
+}
+
+.menu-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.menu-desc {
+  font-size: 11px;
+  color: #8a8a8a;
+}
+
+.menu-item.danger {
+  border-color: #ffd9d9;
+  background: #fff7f7;
+}
+
+.menu-item.danger .menu-title {
   color: #ff4444;
-  background: white;
 }
 
 /* 模态框内容 */
