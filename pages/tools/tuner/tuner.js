@@ -40,6 +40,10 @@ Page({
     this.stopListening();
   },
 
+  onHide() {
+    this.stopListening();
+  },
+
   setupPresets() {
     const tuningPresets = [
       {
@@ -84,7 +88,7 @@ Page({
     this.recorderManager.onError(() => {
       this.stopListening();
       this.setData({
-        statusText: '录音失败，请重试',
+        statusText: '录音失败，请稍后重试',
         statusLevel: 'idle'
       });
     });
@@ -218,6 +222,8 @@ Page({
           statusText: '正在监听音高…',
           statusLevel: 'listening'
         });
+        this.lastFrameAt = 0;
+        this.frequencyHistory = [];
         this.recorderManager.start({
           format: 'PCM',
           sampleRate: 44100,
@@ -228,13 +234,20 @@ Page({
         this.listenTimer = setInterval(() => {
           const now = Date.now();
           if (!this.lastFrameAt || now - this.lastFrameAt > 1200) {
-            this.updateTuningFeedback(true);
+            this.setData({
+              tuningValue: 0,
+              cents: 0,
+              currentFrequency: 0,
+              volume: 0,
+              statusText: '未检测到稳定音高',
+              statusLevel: 'idle'
+            });
+            return;
           }
-          this.updateTuningFeedback(true);
           if (this.data.autoTune) {
             this.maybeAutoAdvance();
           }
-        }, 800);
+        }, 600);
       })
       .catch(() => {
         this.setData({
@@ -265,6 +278,7 @@ Page({
       });
     }
     this.lastFrameAt = 0;
+    this.frequencyHistory = [];
   },
 
   maybeAutoAdvance() {
@@ -324,15 +338,41 @@ Page({
     return new Promise((resolve, reject) => {
       wx.getSetting({
         success: res => {
-          const hasPermission = res.authSetting['scope.record'];
-          if (hasPermission) {
+          const permission = res.authSetting['scope.record'];
+          if (permission) {
             resolve();
+            return;
+          }
+          if (permission === false) {
+            wx.showModal({
+              title: '需要录音权限',
+              content: '调音器需要麦克风权限，请前往设置开启。',
+              confirmText: '去设置',
+              success: modalRes => {
+                if (modalRes.confirm) {
+                  wx.openSetting();
+                }
+              }
+            });
+            reject();
             return;
           }
           wx.authorize({
             scope: 'scope.record',
             success: resolve,
-            fail: reject
+            fail: () => {
+              wx.showModal({
+                title: '需要录音权限',
+                content: '调音器需要麦克风权限，请前往设置开启。',
+                confirmText: '去设置',
+                success: modalRes => {
+                  if (modalRes.confirm) {
+                    wx.openSetting();
+                  }
+                }
+              });
+              reject();
+            }
           });
         },
         fail: reject
@@ -341,6 +381,7 @@ Page({
   },
 
   onFrameRecorded(res) {
+    if (!this.data.isListening) return;
     const { frameBuffer } = res;
     const detection = this.detectPitch(frameBuffer);
     if (!detection) {
@@ -355,11 +396,12 @@ Page({
       return;
     }
     const { frequency, volume } = detection;
+    const smoothedFrequency = this.smoothFrequency(frequency);
     const stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
     const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
-    const deviation = this.frequencyToCents(frequency, targetFrequency);
+    const deviation = this.frequencyToCents(smoothedFrequency, targetFrequency);
     const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
-    const currentFrequency = Number(frequency.toFixed(2));
+    const currentFrequency = Number(smoothedFrequency.toFixed(2));
     this.lastFrameAt = Date.now();
 
     this.setData({
@@ -398,6 +440,20 @@ Page({
     }
     const volume = Math.min(100, Math.round(rms * 200));
     return { frequency, volume };
+  },
+
+  smoothFrequency(frequency) {
+    if (!frequency) return frequency;
+    if (!this.frequencyHistory) {
+      this.frequencyHistory = [];
+    }
+    this.frequencyHistory.push(frequency);
+    if (this.frequencyHistory.length > 5) {
+      this.frequencyHistory.shift();
+    }
+    const sorted = [...this.frequencyHistory].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted[mid];
   },
 
   autoCorrelate(buffer, sampleRate) {

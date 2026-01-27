@@ -23,6 +23,14 @@ Page({
     this.stopPlayback();
   },
 
+  onHide() {
+    this.stopTimer();
+    if (this.recorderManager && this.data.isRecording) {
+      this.recorderManager.stop();
+    }
+    this.stopPlayback();
+  },
+
   initRecorder() {
     this.recorderManager = wx.getRecorderManager();
     this.recorderManager.onStart(() => {
@@ -40,8 +48,9 @@ Page({
     this.recorderManager.onStop((res) => {
       this.handleRecordStop(res);
     });
-    this.recorderManager.onError(() => {
-      wx.showToast({ title: '录音失败', icon: 'error' });
+    this.recorderManager.onError((err) => {
+      const message = err && err.errMsg ? err.errMsg : '录音失败';
+      wx.showToast({ title: message, icon: 'error' });
       this.resetRecorderState();
     });
   },
@@ -60,27 +69,42 @@ Page({
     return new Promise((resolve, reject) => {
       wx.getSetting({
         success: (res) => {
-          if (res.authSetting['scope.record']) {
+          const permission = res.authSetting['scope.record'];
+          if (permission) {
             resolve();
-          } else {
-            wx.authorize({
-              scope: 'scope.record',
-              success: () => resolve(),
-              fail: () => {
-                wx.showModal({
-                  title: '需要录音权限',
-                  content: '录音功能需要麦克风权限，请前往设置开启。',
-                  confirmText: '去设置',
-                  success: (modalRes) => {
-                    if (modalRes.confirm) {
-                      wx.openSetting();
-                    }
-                  }
-                });
-                reject();
+            return;
+          }
+          if (permission === false) {
+            wx.showModal({
+              title: '需要录音权限',
+              content: '录音功能需要麦克风权限，请前往设置开启。',
+              confirmText: '去设置',
+              success: (modalRes) => {
+                if (modalRes.confirm) {
+                  wx.openSetting();
+                }
               }
             });
+            reject();
+            return;
           }
+          wx.authorize({
+            scope: 'scope.record',
+            success: () => resolve(),
+            fail: () => {
+              wx.showModal({
+                title: '需要录音权限',
+                content: '录音功能需要麦克风权限，请前往设置开启。',
+                confirmText: '去设置',
+                success: (modalRes) => {
+                  if (modalRes.confirm) {
+                    wx.openSetting();
+                  }
+                }
+              });
+              reject();
+            }
+          });
         },
         fail: () => reject()
       });
@@ -89,6 +113,9 @@ Page({
 
   startRecording() {
     if (this.data.isRecording) return;
+    if (!this.recorderManager) {
+      this.initRecorder();
+    }
     this.requestPermission()
       .then(() => {
         this.setData({ duration: 0, durationText: '00:00' });
@@ -97,7 +124,8 @@ Page({
           sampleRate: 44100,
           numberOfChannels: 1,
           encodeBitRate: 192000,
-          format: 'mp3'
+          format: 'mp3',
+          frameSize: 8
         });
       })
       .catch(() => {

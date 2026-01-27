@@ -50,7 +50,6 @@
   "lazyCodeLoading": "requiredComponents",
   "__usePrivacyCheck__": true,
   "requiredPrivateInfos": [
-    "record",
     "getLocation"
   ]
 }
