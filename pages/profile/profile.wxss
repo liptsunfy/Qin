@@ -428,17 +428,32 @@
   gap: 12px;
 }
 
+/* 关注公众号 */
+.follow-card {
+  margin: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .share-info {
   flex: 1;
 }
 
-.share-title {
+.share-title,
+.follow-title {
   font-size: 16px;
   font-weight: 600;
   color: #333;
 }
 
-.share-desc {
+.share-desc,
+.follow-desc {
   margin-top: 6px;
   font-size: 12px;
   color: #888;
@@ -458,9 +473,13 @@
   border: 1px solid transparent;
 }
 
-.share-btn.small {
-  padding: 6px 12px;
-  font-size: 12px;
+.follow-btn {
+  padding: 8px 16px;
+  border-radius: 18px;
+  font-size: 13px;
+  background: #f3f5ff;
+  color: #5c6cff;
+  border: 1px solid #e5e9ff;
 }
 
 /* 功能按钮 */
