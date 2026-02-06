@@ -7,7 +7,8 @@ Page({
     duration: 0,
     durationText: '00:00',
     recordings: [],
-    playingId: null
+    playingId: null,
+    recorderMode: 'guqin'
   },
 
   onLoad() {
@@ -57,7 +58,12 @@ Page({
 
   loadRecordings() {
     const recordings = wx.getStorageSync(STORAGE_KEY) || [];
-    this.setData({ recordings });
+    const normalized = recordings.map((record) => ({
+      ...record,
+      durationText: record.durationText || this.formatDuration(record.duration || 0),
+      createTimeText: record.createTimeText || this.formatDateTime(record.createTime || Date.now())
+    }));
+    this.setData({ recordings: normalized });
   },
 
   saveRecordings(recordings) {
@@ -121,9 +127,9 @@ Page({
         this.setData({ duration: 0, durationText: '00:00' });
         this.recorderManager.start({
           duration: 10 * 60 * 1000,
-          sampleRate: 44100,
-          numberOfChannels: 1,
-          encodeBitRate: 192000,
+          sampleRate: 48000,
+          numberOfChannels: 2,
+          encodeBitRate: 256000,
           format: 'mp3',
           frameSize: 8
         });
@@ -166,7 +172,8 @@ Page({
           duration,
           durationText: this.formatDuration(duration),
           filePath: saveRes.savedFilePath,
-          createTime: Date.now()
+          createTime: Date.now(),
+          createTimeText: this.formatDateTime(Date.now())
         };
         const newRecords = [record, ...this.data.recordings];
         this.saveRecordings(newRecords);
@@ -216,6 +223,13 @@ Page({
     const date = new Date();
     const pad = (value) => value.toString().padStart(2, '0');
     return `录音 ${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  },
+
+  formatDateTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const pad = (value) => value.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   },
 
   togglePlay(e) {
@@ -274,6 +288,67 @@ Page({
     wx.showToast({ title: '当前版本不支持分享音频', icon: 'none' });
   },
 
+  renameRecording(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+
+    wx.showModal({
+      title: '重命名录音',
+      content: '请输入新的录音名称',
+      editable: true,
+      placeholderText: record.name,
+      success: (res) => {
+        if (!res.confirm) return;
+        const name = (res.content || '').trim();
+        if (!name) {
+          wx.showToast({ title: '名称不能为空', icon: 'none' });
+          return;
+        }
+        const newRecords = this.data.recordings.map(item => (
+          item.id === record.id ? { ...item, name } : item
+        ));
+        this.saveRecordings(newRecords);
+      }
+    });
+  },
+
+  saveAsRecording(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+    const fs = wx.getFileSystemManager();
+    const defaultName = `${record.name}-副本`;
+    wx.showModal({
+      title: '另存为',
+      content: '请输入新的文件名称',
+      editable: true,
+      placeholderText: defaultName,
+      success: (res) => {
+        if (!res.confirm) return;
+        const name = (res.content || '').trim() || defaultName;
+        const targetPath = `${wx.env.USER_DATA_PATH}/rec_${Date.now()}.mp3`;
+        fs.copyFile({
+          srcPath: record.filePath,
+          destPath: targetPath,
+          success: () => {
+            const newRecord = {
+              ...record,
+              id: `rec_${Date.now()}`,
+              name,
+              filePath: targetPath,
+              createTime: Date.now(),
+              createTimeText: this.formatDateTime(Date.now())
+            };
+            this.saveRecordings([newRecord, ...this.data.recordings]);
+            wx.showToast({ title: '已另存为', icon: 'success' });
+          },
+          fail: () => {
+            wx.showToast({ title: '另存为失败', icon: 'error' });
+          }
+        });
+      }
+    });
+  },
+
   deleteRecording(e) {
     const record = e.currentTarget.dataset.record;
     if (!record) return;
@@ -283,6 +358,9 @@ Page({
       content: '确定要删除这条录音吗？',
       success: (res) => {
         if (!res.confirm) return;
+        if (this.data.playingId === record.id) {
+          this.stopPlayback();
+        }
         const newRecords = this.data.recordings.filter(item => item.id !== record.id);
         this.saveRecordings(newRecords);
         wx.removeSavedFile({
