@@ -1,0 +1,61 @@
+<view class="tools-container">
+  <view class="tools-header card">
+    <view class="header-slot">
+      <text class="header-primary">{{headerSlot.primary}}</text>
+      <text wx:if="{{headerSlot.secondary}}" class="header-secondary">{{headerSlot.secondary}}</text>
+    </view>
+  </view>
+
+  <scroll-view class="category-nav" scroll-x>
+    <view wx:for="{{categories}}" wx:key="index" class="category-item {{activeCategory == item ? 'active' : ''}}" bindtap="onCategoryTap" data-category="{{item}}">
+      <text>{{item === 'all' ? '全部' : item}}</text>
+    </view>
+  </scroll-view>
+
+  <view class="tools-list">
+    <view wx:if="{{activeCategory === 'all' || !activeCategory}}" class="tools-category">
+      <view wx:for="{{categoryKeys}}" wx:key="index" class="category-section">
+        <text class="category-title">{{item}}</text>
+        <view class="tools-grid">
+          <view wx:for="{{toolsByCategory[item]}}" wx:key="id" class="tool-card {{item.enabled ? '' : 'disabled'}} {{item.comingSoon ? 'coming-soon' : ''}}" bindtap="onToolTap" data-id="{{item.id}}">
+            <view class="tool-icon"><text>{{item.icon}}</text></view>
+            <view class="tool-info"><text class="tool-name">{{item.name}}</text><text class="tool-desc">{{item.description}}</text></view>
+            <view class="tool-status">
+              <text wx:if="{{!item.enabled}}" class="status-tag disabled">未启用</text>
+              <text wx:if="{{item.comingSoon}}" class="status-tag coming-soon">即将上线</text>
+              <text wx:if="{{item.enabled && !item.comingSoon}}" class="status-tag enabled">v{{item.version}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:else class="tools-category">
+      <view class="category-section">
+        <text class="category-title">{{activeCategory}}</text>
+        <view class="tools-grid">
+          <view wx:for="{{toolsByCategory[activeCategory] || []}}" wx:key="id" class="tool-card {{item.enabled ? '' : 'disabled'}} {{item.comingSoon ? 'coming-soon' : ''}}" bindtap="onToolTap" data-id="{{item.id}}">
+            <view class="tool-icon"><text>{{item.icon}}</text></view>
+            <view class="tool-info"><text class="tool-name">{{item.name}}</text><text class="tool-desc">{{item.description}}</text></view>
+            <view class="tool-status">
+              <text wx:if="{{!item.enabled}}" class="status-tag disabled">未启用</text>
+              <text wx:if="{{item.comingSoon}}" class="status-tag coming-soon">即将上线</text>
+              <text wx:if="{{item.enabled && !item.comingSoon}}" class="status-tag enabled">v{{item.version}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{categoryKeys.length === 0}}" class="empty-state">
+    <text class="empty-icon">🔍</text>
+    <text class="empty-title">未找到相关工具</text>
+    <text class="empty-desc">尝试其他搜索关键词或查看全部工具</text>
+  </view>
+
+  <view class="tools-footer card">
+    <text class="footer-text">持续更新更多古琴学习辅助工具...</text>
+    <text class="footer-hint">copyright©sunli. 2026</text>
+  </view>
+</view>
