@@ -7,7 +7,10 @@ Page({
     duration: 0,
     durationText: '00:00',
     recordings: [],
+<<<<<<< codex/optimize-recorder-features-for-guqin-hlwq7s
+=======
     playingId: null,
+>>>>>>> main
     recorderMode: 'guqin'
   },
 
@@ -16,12 +19,15 @@ Page({
     this.loadRecordings();
   },
 
+  onShow() {
+    this.loadRecordings();
+  },
+
   onUnload() {
     this.stopTimer();
     if (this.recorderManager && this.data.isRecording) {
       this.recorderManager.stop();
     }
-    this.stopPlayback();
   },
 
   onHide() {
@@ -29,7 +35,6 @@ Page({
     if (this.recorderManager && this.data.isRecording) {
       this.recorderManager.stop();
     }
-    this.stopPlayback();
   },
 
   initRecorder() {
@@ -230,6 +235,15 @@ Page({
     const date = new Date(timestamp);
     const pad = (value) => value.toString().padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+<<<<<<< codex/optimize-recorder-features-for-guqin-hlwq7s
+  },
+
+  openRecordingDetail(e) {
+    const recordId = e.currentTarget.dataset.id;
+    if (!recordId) return;
+    wx.navigateTo({
+      url: `/pages/tools/recorder-detail/recorder-detail?id=${recordId}`
+=======
   },
 
   togglePlay(e) {
@@ -368,6 +382,7 @@ Page({
           complete: () => {}
         });
       }
+>>>>>>> main
     });
   }
 });

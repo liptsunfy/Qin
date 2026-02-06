@@ -39,11 +39,14 @@
     <view class="section-title">我的录音</view>
     <view wx:if="{{recordings.length === 0}}" class="empty">还没有录音，快来记录第一段声音吧～</view>
 
-    <view wx:for="{{recordings}}" wx:key="id" class="record-item">
+    <view wx:for="{{recordings}}" wx:key="id" class="record-item" data-id="{{item.id}}" bindtap="openRecordingDetail">
       <view class="record-info">
         <text class="record-name">{{item.name}}</text>
         <text class="record-meta">{{item.durationText}} · {{item.createTimeText}}</text>
       </view>
+<<<<<<< codex/optimize-recorder-features-for-guqin-hlwq7s
+      <view class="record-arrow">›</view>
+=======
       <view class="record-actions">
         <button class="icon-btn" data-record="{{item}}" bindtap="togglePlay">
           {{playingId === item.id ? '停止' : '播放'}}
@@ -53,6 +56,7 @@
         <button class="icon-btn" data-record="{{item}}" bindtap="renameRecording">重命名</button>
         <button class="icon-btn danger" data-record="{{item}}" bindtap="deleteRecording">删除</button>
       </view>
+>>>>>>> main
     </view>
   </view>
 </view>
