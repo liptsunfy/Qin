@@ -7,6 +7,10 @@ Page({
     duration: 0,
     durationText: '00:00',
     recordings: [],
+<<<<<<< codex/optimize-recorder-features-for-guqin-hlwq7s
+=======
+    playingId: null,
+>>>>>>> main
     recorderMode: 'guqin'
   },
 
@@ -231,6 +235,7 @@ Page({
     const date = new Date(timestamp);
     const pad = (value) => value.toString().padStart(2, '0');
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+<<<<<<< codex/optimize-recorder-features-for-guqin-hlwq7s
   },
 
   openRecordingDetail(e) {
@@ -238,6 +243,146 @@ Page({
     if (!recordId) return;
     wx.navigateTo({
       url: `/pages/tools/recorder-detail/recorder-detail?id=${recordId}`
+=======
+  },
+
+  togglePlay(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+
+    if (this.data.playingId === record.id) {
+      this.stopPlayback();
+      return;
+    }
+
+    this.startPlayback(record);
+  },
+
+  startPlayback(record) {
+    this.stopPlayback();
+    this.audioContext = wx.createInnerAudioContext();
+    this.audioContext.src = record.filePath;
+    this.audioContext.onEnded(() => {
+      this.setData({ playingId: null });
+    });
+    this.audioContext.onStop(() => {
+      this.setData({ playingId: null });
+    });
+    this.audioContext.onError(() => {
+      wx.showToast({ title: '播放失败', icon: 'error' });
+      this.setData({ playingId: null });
+    });
+    this.audioContext.play();
+    this.setData({ playingId: record.id });
+  },
+
+  stopPlayback() {
+    if (this.audioContext) {
+      this.audioContext.stop();
+      this.audioContext.destroy();
+      this.audioContext = null;
+    }
+    this.setData({ playingId: null });
+  },
+
+  shareRecording(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+
+    if (wx.canIUse && wx.canIUse('shareFileMessage')) {
+      wx.shareFileMessage({
+        filePath: record.filePath,
+        fileName: `${record.name}.mp3`,
+        success: () => wx.showToast({ title: '已分享', icon: 'success' }),
+        fail: () => wx.showToast({ title: '分享失败', icon: 'error' })
+      });
+      return;
+    }
+
+    wx.showToast({ title: '当前版本不支持分享音频', icon: 'none' });
+  },
+
+  renameRecording(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+
+    wx.showModal({
+      title: '重命名录音',
+      content: '请输入新的录音名称',
+      editable: true,
+      placeholderText: record.name,
+      success: (res) => {
+        if (!res.confirm) return;
+        const name = (res.content || '').trim();
+        if (!name) {
+          wx.showToast({ title: '名称不能为空', icon: 'none' });
+          return;
+        }
+        const newRecords = this.data.recordings.map(item => (
+          item.id === record.id ? { ...item, name } : item
+        ));
+        this.saveRecordings(newRecords);
+      }
+    });
+  },
+
+  saveAsRecording(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+    const fs = wx.getFileSystemManager();
+    const defaultName = `${record.name}-副本`;
+    wx.showModal({
+      title: '另存为',
+      content: '请输入新的文件名称',
+      editable: true,
+      placeholderText: defaultName,
+      success: (res) => {
+        if (!res.confirm) return;
+        const name = (res.content || '').trim() || defaultName;
+        const targetPath = `${wx.env.USER_DATA_PATH}/rec_${Date.now()}.mp3`;
+        fs.copyFile({
+          srcPath: record.filePath,
+          destPath: targetPath,
+          success: () => {
+            const newRecord = {
+              ...record,
+              id: `rec_${Date.now()}`,
+              name,
+              filePath: targetPath,
+              createTime: Date.now(),
+              createTimeText: this.formatDateTime(Date.now())
+            };
+            this.saveRecordings([newRecord, ...this.data.recordings]);
+            wx.showToast({ title: '已另存为', icon: 'success' });
+          },
+          fail: () => {
+            wx.showToast({ title: '另存为失败', icon: 'error' });
+          }
+        });
+      }
+    });
+  },
+
+  deleteRecording(e) {
+    const record = e.currentTarget.dataset.record;
+    if (!record) return;
+
+    wx.showModal({
+      title: '删除录音',
+      content: '确定要删除这条录音吗？',
+      success: (res) => {
+        if (!res.confirm) return;
+        if (this.data.playingId === record.id) {
+          this.stopPlayback();
+        }
+        const newRecords = this.data.recordings.filter(item => item.id !== record.id);
+        this.saveRecordings(newRecords);
+        wx.removeSavedFile({
+          filePath: record.filePath,
+          complete: () => {}
+        });
+      }
+>>>>>>> main
     });
   }
 });
