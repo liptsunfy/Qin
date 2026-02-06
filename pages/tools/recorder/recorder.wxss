@@ -166,29 +166,7 @@
   color: #8a8a8a;
 }
 
-<<<<<<< codex/optimize-recorder-features-for-guqin-hlwq7s
 .record-arrow {
   font-size: 36rpx;
   color: #c5c5c5;
-=======
-.record-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10rpx;
-  justify-content: flex-end;
-}
-
-.icon-btn {
-  padding: 8rpx 16rpx;
-  border-radius: 16rpx;
-  font-size: 22rpx;
-  color: #5c6cff;
-  background: #f1f3ff;
-  line-height: 1.2;
-}
-
-.icon-btn.danger {
-  color: #ff6b6b;
-  background: #ffecec;
->>>>>>> main
 }

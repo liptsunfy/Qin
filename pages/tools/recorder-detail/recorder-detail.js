@@ -172,7 +172,7 @@ Page({
     }
     wx.showModal({
       title: '暂不支持',
-      content: '当前版本不支持直接保存到手机文件夹，可使用分享功能保存。',
+      content: '当前版本不支持直接保存到手机文件夹，可使用分享功能或系统文件管理器保存。',
       showCancel: false
     });
   },

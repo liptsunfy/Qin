@@ -1,7 +1,6 @@
 <view class="page">
   <view class="header">
     <text class="title">练习录音</text>
-    <text class="subtitle">为古琴的清亮尾音与泛音而优化，保存每次练习的声音</text>
   </view>
 
   <view class="card mode-card">
@@ -13,8 +12,7 @@
       <text>48kHz / 256kbps，双声道捕捉泛音与尾音细节。</text>
     </view>
     <view class="mode-tips">
-      <view class="tip-item">• 建议距离琴面 30-50cm</view>
-      <view class="tip-item">• 环境保持安静，避免空调或风扇</view>
+      <view class="tip-item">• 环境保持安静</view>
       <view class="tip-item">• 录音后可重命名、分享或另存为</view>
     </view>
   </view>
@@ -44,19 +42,7 @@
         <text class="record-name">{{item.name}}</text>
         <text class="record-meta">{{item.durationText}} · {{item.createTimeText}}</text>
       </view>
-<<<<<<< codex/optimize-recorder-features-for-guqin-hlwq7s
       <view class="record-arrow">›</view>
-=======
-      <view class="record-actions">
-        <button class="icon-btn" data-record="{{item}}" bindtap="togglePlay">
-          {{playingId === item.id ? '停止' : '播放'}}
-        </button>
-        <button class="icon-btn" data-record="{{item}}" bindtap="shareRecording">分享</button>
-        <button class="icon-btn" data-record="{{item}}" bindtap="saveAsRecording">另存为</button>
-        <button class="icon-btn" data-record="{{item}}" bindtap="renameRecording">重命名</button>
-        <button class="icon-btn danger" data-record="{{item}}" bindtap="deleteRecording">删除</button>
-      </view>
->>>>>>> main
     </view>
   </view>
 </view>
