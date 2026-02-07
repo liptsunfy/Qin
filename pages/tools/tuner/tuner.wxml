@@ -1,27 +1,33 @@
 <view class="tuner-page">
   <view class="card hero">
     <text class="hero-title">琴调音器</text>
-    <text class="hero-subtitle">选择曲调 → 设置基准音 → 开始监听</text>
   </view>
 
   <view class="card settings-card">
     <view class="setting-row">
       <text class="setting-label">曲调</text>
-      <picker mode="selector" range="{{tuningPresetNames}}" bindchange="onPresetChange" disabled="{{!tuningPresetNames.length}}">
-        <view class="setting-value">
-          <text>{{tuningPresetNames[currentPresetIndex]}}</text>
-          <text class="setting-desc">{{tuningPresets[currentPresetIndex] ? tuningPresets[currentPresetIndex].description : ''}}</text>
-        </view>
-      </picker>
-    </view>
-    <view class="setting-row">
-      <text class="setting-label">基准音 A4</text>
-      <view class="setting-slider">
-        <slider min="415" max="466" step="1" value="{{a4}}" bindchange="onA4Change" />
-        <text class="setting-value-text">{{a4}} Hz</text>
+      <view class="setting-value">
+        <text>{{tuningPresetNames[currentPresetIndex]}}</text>
+        <text class="setting-desc">{{tuningPresets[currentPresetIndex] ? tuningPresets[currentPresetIndex].description : ''}}</text>
       </view>
     </view>
-    <view class="setting-hint">选择弦位 → 开始监听 → 观察指示条</view>
+    <view class="setting-row compact">
+      <text class="setting-label">基准音 A4</text>
+      <view class="setting-input">
+        <view class="a4-stepper">
+          <button class="step-btn" data-step="-1" bindtap="adjustA4">-</button>
+          <input
+            class="a4-input"
+            type="number"
+            value="{{a4}}"
+            maxlength="3"
+            bindinput="onA4Input"
+          />
+          <button class="step-btn" data-step="1" bindtap="adjustA4">+</button>
+        </view>
+        <text class="setting-value-text">Hz</text>
+      </view>
+    </view>
   </view>
 
   <view class="card status-card" wx:if="{{strings.length}}">
@@ -43,16 +49,23 @@
       <text>偏差 {{cents}} cents</text>
       <text>音量 {{volume}}</text>
     </view>
-    <text class="status-target">目标频率 {{currentString ? currentString.frequency.toFixed(1) : '--'}} Hz</text>
-    <view class="meter">
-      <view class="meter-track">
-        <view class="meter-center"></view>
-        <view class="meter-fill" style="transform: translateX({{tuningValue}}%);"></view>
+    <view class="dial">
+      <view class="dial-arc">
+        <view class="dial-tick left"></view>
+        <view class="dial-tick center"></view>
+        <view class="dial-tick right"></view>
+        <view class="dial-needle" style="transform: rotate({{needleDeg}}deg);"></view>
+        <view class="dial-value">{{cents}}c</view>
       </view>
-      <view class="meter-labels">
+      <view class="dial-labels">
         <text>偏低</text>
         <text>标准</text>
         <text>偏高</text>
+      </view>
+      <view class="dial-scale-text">
+        <text>-50</text>
+        <text>0</text>
+        <text>+50</text>
       </view>
     </view>
     <view class="status-pill {{statusLevel}}">
@@ -60,11 +73,12 @@
     </view>
     <view class="status-buttons">
       <button class="primary" bindtap="onToggleListen">{{isListening ? '停止监听' : '开始监听'}}</button>
+      <button class="ghost" bindtap="toggleReferenceTone">{{isTonePlaying ? '停止参考音' : '播放参考音'}}</button>
       <button class="ghost" bindtap="onMarkTuned">标记已调准</button>
     </view>
   </view>
 
-  <view class="card">
+  <view class="card compact-card">
     <view class="section-header">
       <text class="section-title">弦位列表</text>
       <text class="section-action" bindtap="onResetTuned">重置</text>
@@ -78,19 +92,4 @@
     </view>
   </view>
 
-  <view class="card tips">
-    <text class="section-title">调音提示</text>
-    <view class="tip-item">
-      <text class="tip-dot">•</text>
-      <text class="tip-text">先松后紧，避免拉断弦。</text>
-    </view>
-    <view class="tip-item">
-      <text class="tip-dot">•</text>
-      <text class="tip-text">听到“拍音”时，逐步减小差异。</text>
-    </view>
-    <view class="tip-item">
-      <text class="tip-dot">•</text>
-      <text class="tip-text">每根弦调完后回到一弦复核一次。</text>
-    </view>
-  </view>
 </view>
