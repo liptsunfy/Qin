@@ -51,13 +51,13 @@ Page({
   },
 
   setupPresets() {
-    // 正调以 C 调为基准：五六一二三五六 -> G2/A2/C3/D3/E3/G3/A3
+    // 正调（F调）以 A4=440Hz 为基准：一弦至七弦 C5/D5/F5/G5/A4/C4/D4
     const tuningPresets = [
       {
         name: '正调',
-        description: '五六一二三五六（C调）',
-        notes: ['G2', 'A2', 'C3', 'D3', 'E3', 'G3', 'A3'],
-        jianpu: ['5', '6', '1', '2', '3', '5', '6']
+        description: '一二四五六一二（F调）',
+        notes: ['C5', 'D5', 'F5', 'G5', 'A4', 'C4', 'D4'],
+        jianpu: ['1', '2', '4', '5', '6', '1', '2']
       },
       {
         name: '紧五弦',
