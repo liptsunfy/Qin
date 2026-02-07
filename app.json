@@ -8,6 +8,7 @@
     "pages/tools/notation/notation",
     "pages/tools/knowledge/knowledge",
     "pages/tools/calculator/calculator",
+    "pages/tools/ywt/ywt",
     "pages/checkin/checkin",
     "pages/profile/profile",
     "pages/review/review",

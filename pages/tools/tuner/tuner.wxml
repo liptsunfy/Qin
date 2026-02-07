@@ -6,10 +6,18 @@
   <view class="card settings-card">
     <view class="setting-row">
       <text class="setting-label">曲调</text>
-      <view class="setting-value">
-        <text>{{tuningPresetNames[currentPresetIndex]}}</text>
-        <text class="setting-desc">{{tuningPresets[currentPresetIndex] ? tuningPresets[currentPresetIndex].description : ''}}</text>
-      </view>
+      <picker
+        class="setting-value picker"
+        mode="selector"
+        range="{{tuningPresetNames}}"
+        value="{{currentPresetIndex}}"
+        bindchange="onPresetChange"
+      >
+        <view class="picker-content">
+          <text>{{tuningPresetNames[currentPresetIndex]}}</text>
+          <text class="setting-desc">{{tuningPresets[currentPresetIndex] ? tuningPresets[currentPresetIndex].description : ''}}</text>
+        </view>
+      </picker>
     </view>
     <view class="setting-row compact">
       <text class="setting-label">基准音 A4</text>
@@ -48,6 +56,7 @@
     <view class="status-meta">
       <text>偏差 {{cents}} cents</text>
       <text>音量 {{volume}}</text>
+      <text>稳定度 {{stability}}%</text>
     </view>
     <view class="dial">
       <view class="dial-arc">
@@ -87,6 +96,7 @@
       <view wx:for="{{strings}}" wx:key="id" class="string-item {{index === currentStringIndex ? 'active' : ''}}" bindtap="onStringTap" data-index="{{index}}">
         <text class="string-name">{{item.name}}</text>
         <text class="string-note">{{item.note}}{{item.octave}}</text>
+        <text class="string-jianpu">{{item.jianpu}}</text>
         <text class="string-status {{item.tuned ? 'tuned' : ''}}">{{item.tuned ? '已调准' : '待调音'}}</text>
       </view>
     </view>
