@@ -25,6 +25,7 @@ Page({
     volume: 0,
     autoTune: false,
     isListening: false,
+    isTonePlaying: false,
     statusText: '未开始监听',
     statusLevel: 'idle',
     needleDeg: 0
@@ -40,10 +41,12 @@ Page({
 
   onUnload() {
     this.stopListening();
+    this.stopReferenceTone();
   },
 
   onHide() {
     this.stopListening();
+    this.stopReferenceTone();
   },
 
   setupPresets() {
@@ -211,6 +214,7 @@ Page({
     const nextState = !this.data.isListening;
     this.setData({ isListening: nextState });
     if (nextState) {
+      this.stopReferenceTone();
       this.startListening();
       return;
     }
@@ -299,13 +303,6 @@ Page({
       currentStringIndex: nextIndex,
       currentString: nextStrings[nextIndex] || null
     });
-  },
-
-  onPresetChange(e) {
-    const index = Number(e.detail.value);
-    this.stopListening();
-    this.applyPreset(index);
-    this.updateTuningFeedback(true);
   },
 
   onA4Change(e) {
@@ -409,7 +406,14 @@ Page({
     }
     const { frequency, volume } = detection;
     const smoothedFrequency = this.smoothFrequency(frequency);
-    const stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
+    const match = this.findClosestString(smoothedFrequency);
+    if (match) {
+      this.setData({
+        currentStringIndex: match.index,
+        currentString: match.string
+      });
+    }
+    const stringItem = match ? match.string : (this.data.currentString || this.data.strings[this.data.currentStringIndex]);
     const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
     const deviation = this.frequencyToCents(smoothedFrequency, targetFrequency);
     const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
@@ -447,8 +451,8 @@ Page({
     if (rms < 0.008) {
       return null;
     }
-    const result = this.autoCorrelate(floatBuffer, sampleRate);
-    if (!result || result.frequency === -1 || result.confidence < 0.15) {
+    const result = this.detectPitchWithFft(floatBuffer, sampleRate);
+    if (!result || result.frequency === -1 || result.confidence < 0.12) {
       return null;
     }
     const volume = Math.min(100, Math.round(rms * 200));
@@ -469,7 +473,65 @@ Page({
     return sorted[mid];
   },
 
-  autoCorrelate(buffer, sampleRate) {
+  detectPitchWithFft(buffer, sampleRate) {
+    const size = 2048;
+    if (buffer.length < size) return { frequency: -1, confidence: 0 };
+    const slice = buffer.slice(0, size);
+    const { magnitudes } = this.fftReal(slice);
+    const minFreq = 60;
+    const maxFreq = 1200;
+    const minIndex = Math.floor((minFreq / sampleRate) * size);
+    const maxIndex = Math.min(magnitudes.length - 1, Math.floor((maxFreq / sampleRate) * size));
+    let peakIndex = -1;
+    let peakValue = 0;
+    for (let i = minIndex; i <= maxIndex; i += 1) {
+      if (magnitudes[i] > peakValue) {
+        peakValue = magnitudes[i];
+        peakIndex = i;
+      }
+    }
+    if (peakIndex <= 0) return { frequency: -1, confidence: 0 };
+    let fundamental = (peakIndex * sampleRate) / size;
+    const harmonicCandidates = [2, 3, 4];
+    harmonicCandidates.forEach((divisor) => {
+      const index = Math.floor(peakIndex / divisor);
+      if (index >= minIndex && magnitudes[index] > peakValue * 0.2) {
+        fundamental = (index * sampleRate) / size;
+      }
+    });
+    return {
+      frequency: fundamental,
+      confidence: peakValue / (size * 0.5)
+    };
+  },
+
+  fftReal(buffer) {
+    const size = buffer.length;
+    const real = buffer.slice();
+    const imag = new Float32Array(size);
+    for (let step = 1; step < size; step *= 2) {
+      const jump = step * 2;
+      const delta = Math.PI / step;
+      for (let group = 0; group < step; group += 1) {
+        const cos = Math.cos(delta * group);
+        const sin = -Math.sin(delta * group);
+        for (let pair = group; pair < size; pair += jump) {
+          const match = pair + step;
+          const tre = cos * real[match] - sin * imag[match];
+          const tim = cos * imag[match] + sin * real[match];
+          real[match] = real[pair] - tre;
+          imag[match] = imag[pair] - tim;
+          real[pair] += tre;
+          imag[pair] += tim;
+        }
+      }
+    }
+    const magnitudes = new Float32Array(size / 2);
+    for (let i = 0; i < magnitudes.length; i += 1) {
+      magnitudes[i] = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+    }
+    return { magnitudes };
+  },
     const size = buffer.length;
     const correlations = new Array(size).fill(0);
     let start = 0;
@@ -531,5 +593,100 @@ Page({
   centsToNeedle(cents) {
     const clamped = Math.max(-50, Math.min(50, cents));
     return (clamped / 50) * 45;
+  },
+
+  findClosestString(frequency) {
+    if (!frequency || !this.data.strings || !this.data.strings.length) return null;
+    let closestIndex = 0;
+    let closestDiff = Infinity;
+    this.data.strings.forEach((stringItem, index) => {
+      const diff = Math.abs(frequency - stringItem.frequency);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestIndex = index;
+      }
+    });
+    return {
+      index: closestIndex,
+      string: this.data.strings[closestIndex]
+    };
+  },
+
+  toggleReferenceTone() {
+    if (this.data.isTonePlaying) {
+      this.stopReferenceTone();
+      return;
+    }
+    this.playReferenceTone();
+  },
+
+  playReferenceTone() {
+    const stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
+    const frequency = stringItem ? stringItem.frequency : this.data.a4;
+    const filePath = this.generateToneFile(frequency, 1.2);
+    if (!filePath) return;
+    if (!this.toneContext) {
+      this.toneContext = wx.createInnerAudioContext();
+    }
+    this.toneContext.src = filePath;
+    this.toneContext.onEnded(() => {
+      this.setData({ isTonePlaying: false });
+    });
+    this.toneContext.onStop(() => {
+      this.setData({ isTonePlaying: false });
+    });
+    this.toneContext.onError(() => {
+      this.setData({ isTonePlaying: false });
+      wx.showToast({ title: '播放参考音失败', icon: 'none' });
+    });
+    this.toneContext.play();
+    this.setData({ isTonePlaying: true });
+  },
+
+  stopReferenceTone() {
+    if (this.toneContext) {
+      this.toneContext.stop();
+    }
+    this.setData({ isTonePlaying: false });
+  },
+
+  generateToneFile(frequency, durationSeconds) {
+    if (!frequency) return null;
+    const sampleRate = 44100;
+    const sampleCount = Math.floor(sampleRate * durationSeconds);
+    const buffer = new ArrayBuffer(44 + sampleCount * 2);
+    const view = new DataView(buffer);
+    const writeString = (offset, string) => {
+      for (let i = 0; i < string.length; i += 1) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + sampleCount * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, sampleCount * 2, true);
+    for (let i = 0; i < sampleCount; i += 1) {
+      const t = i / sampleRate;
+      const sample = Math.sin(2 * Math.PI * frequency * t);
+      view.setInt16(44 + i * 2, sample * 32767, true);
+    }
+    const fs = wx.getFileSystemManager();
+    const filePath = `${wx.env.USER_DATA_PATH}/tone_${Math.round(frequency)}.wav`;
+    try {
+      fs.writeFileSync(filePath, buffer);
+      return filePath;
+    } catch (err) {
+      wx.showToast({ title: '参考音生成失败', icon: 'none' });
+      return null;
+    }
   }
 });

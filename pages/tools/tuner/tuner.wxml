@@ -6,12 +6,10 @@
   <view class="card settings-card">
     <view class="setting-row">
       <text class="setting-label">曲调</text>
-      <picker mode="selector" range="{{tuningPresetNames}}" bindchange="onPresetChange" disabled="{{!tuningPresetNames.length}}">
-        <view class="setting-value">
-          <text>{{tuningPresetNames[currentPresetIndex]}}</text>
-          <text class="setting-desc">{{tuningPresets[currentPresetIndex] ? tuningPresets[currentPresetIndex].description : ''}}</text>
-        </view>
-      </picker>
+      <view class="setting-value">
+        <text>{{tuningPresetNames[currentPresetIndex]}}</text>
+        <text class="setting-desc">{{tuningPresets[currentPresetIndex] ? tuningPresets[currentPresetIndex].description : ''}}</text>
+      </view>
     </view>
     <view class="setting-row compact">
       <text class="setting-label">基准音 A4</text>
@@ -65,12 +63,18 @@
         <text>标准</text>
         <text>偏高</text>
       </view>
+      <view class="dial-scale-text">
+        <text>-50</text>
+        <text>0</text>
+        <text>+50</text>
+      </view>
     </view>
     <view class="status-pill {{statusLevel}}">
       <text>{{statusText}}</text>
     </view>
     <view class="status-buttons">
       <button class="primary" bindtap="onToggleListen">{{isListening ? '停止监听' : '开始监听'}}</button>
+      <button class="ghost" bindtap="toggleReferenceTone">{{isTonePlaying ? '停止参考音' : '播放参考音'}}</button>
       <button class="ghost" bindtap="onMarkTuned">标记已调准</button>
     </view>
   </view>

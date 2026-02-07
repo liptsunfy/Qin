@@ -30,12 +30,13 @@
 .dial-needle{width:4rpx;height:70rpx;background:linear-gradient(180deg,#d6a168,#b67c46);border-radius:999rpx;transform-origin:bottom center;transition:transform 0.2s ease}
 .dial-value{position:absolute;bottom:12rpx;font-size:28rpx;font-weight:700;color:#b67c46}
 .dial-labels{width:100%;display:flex;justify-content:space-between;font-size:20rpx;color:#a0a7b6}
+.dial-scale-text{width:100%;display:flex;justify-content:space-between;font-size:20rpx;color:#9aa2b1}
 .status-pill{padding:10rpx 18rpx;border-radius:999rpx;font-size:22rpx;display:inline-flex;align-items:center;justify-content:center;background:#f2f2f2;color:#666;font-weight:600}
 .status-pill.ok{background:#ecf8f2;color:#2b7a5a}
 .status-pill.low{background:#fef3e6;color:#b26a00}
 .status-pill.high{background:#ffecec;color:#b54646}
 .status-pill.listening{background:#f2f6ff;color:#4a5aa8}
-.status-buttons{display:flex;gap:12rpx}
+.status-buttons{display:flex;gap:10rpx;flex-wrap:wrap}
 .status-buttons button{flex:1;border-radius:22rpx;font-size:24rpx;padding:12rpx 0;font-weight:600}
 .status-buttons .primary{background:#1d1f25;color:#fff}
 .status-buttons .ghost{background:#f2f4f8;color:#1d1f25}
