@@ -128,6 +128,17 @@
   font-size: 26rpx;
   color: #4b4b4b;
   margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.section-hint {
+  font-size: 20rpx;
+  color: #9a9a9a;
+  background: #f2f3f7;
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
 }
 
 .empty {
@@ -159,6 +170,10 @@
   font-size: 26rpx;
   font-weight: 600;
   color: #2a2a2a;
+  max-width: 360rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .record-meta {
