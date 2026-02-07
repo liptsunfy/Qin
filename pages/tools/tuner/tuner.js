@@ -312,14 +312,6 @@ Page({
     this.updateTuningFeedback(true);
   },
 
-  onA4PresetTap(e) {
-    const value = Number(e.currentTarget.dataset.value);
-    if (!value) return;
-    this.setData({ a4: value });
-    this.applyPreset(this.data.currentPresetIndex);
-    this.updateTuningFeedback(true);
-  },
-
   onMarkTuned() {
     const nextStrings = this.data.strings.map((item, index) => {
       if (index === this.data.currentStringIndex) {
@@ -531,57 +523,6 @@ Page({
       magnitudes[i] = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
     }
     return { magnitudes };
-  },
-    const size = buffer.length;
-    const correlations = new Array(size).fill(0);
-    let start = 0;
-    let end = size - 1;
-    const threshold = 0.2;
-
-    while (start < size / 2 && Math.abs(buffer[start]) < threshold) start += 1;
-    while (end > size / 2 && Math.abs(buffer[end]) < threshold) end -= 1;
-
-    const trimmed = buffer.slice(start, end);
-    const trimmedSize = trimmed.length;
-    if (trimmedSize < 2) return { frequency: -1, confidence: 0 };
-
-    for (let offset = 0; offset < trimmedSize; offset += 1) {
-      let sum = 0;
-      for (let i = 0; i < trimmedSize - offset; i += 1) {
-        sum += trimmed[i] * trimmed[i + offset];
-      }
-      correlations[offset] = sum;
-    }
-
-    let dip = 0;
-    while (dip < trimmedSize - 1 && correlations[dip] > correlations[dip + 1]) dip += 1;
-
-    let maxVal = -1;
-    let maxPos = -1;
-    for (let i = dip; i < trimmedSize; i += 1) {
-      if (correlations[i] > maxVal) {
-        maxVal = correlations[i];
-        maxPos = i;
-      }
-    }
-
-    if (maxPos <= 0) return { frequency: -1, confidence: 0 };
-    let t0 = maxPos;
-    if (maxPos < trimmedSize - 1) {
-      const x1 = correlations[maxPos - 1];
-      const x2 = correlations[maxPos];
-      const x3 = correlations[maxPos + 1];
-      const a = (x1 + x3 - 2 * x2) / 2;
-      const b = (x3 - x1) / 2;
-      if (a) {
-        t0 = t0 - b / (2 * a);
-      }
-    }
-
-    return {
-      frequency: sampleRate / t0,
-      confidence: maxVal / trimmedSize
-    };
   },
 
   frequencyToCents(current, target) {
