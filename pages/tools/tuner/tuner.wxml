@@ -1,7 +1,6 @@
 <view class="tuner-page">
   <view class="card hero">
     <text class="hero-title">琴调音器</text>
-    <text class="hero-subtitle">选择曲调 → 设置基准音 → 开始监听</text>
   </view>
 
   <view class="card settings-card">
@@ -32,7 +31,6 @@
         <text class="setting-value-text">{{a4}} Hz</text>
       </view>
     </view>
-    <view class="setting-hint">选择弦位 → 开始监听 → 观察指针</view>
   </view>
 
   <view class="card status-card" wx:if="{{strings.length}}">
@@ -55,12 +53,13 @@
       <text>音量 {{volume}}</text>
     </view>
     <view class="dial">
-      <view class="dial-scale">
+      <view class="dial-arc">
         <view class="dial-tick left"></view>
         <view class="dial-tick center"></view>
         <view class="dial-tick right"></view>
+        <view class="dial-needle" style="transform: rotate({{needleDeg}}deg);"></view>
+        <view class="dial-value">{{cents}}c</view>
       </view>
-      <view class="dial-needle" style="transform: rotate({{needleDeg}}deg);"></view>
       <view class="dial-labels">
         <text>偏低</text>
         <text>标准</text>
@@ -90,18 +89,4 @@
     </view>
   </view>
 
-  <view class="card tips">
-    <view class="tips-row">
-      <text class="tip-dot">•</text>
-      <text class="tip-text">先松后紧</text>
-    </view>
-    <view class="tips-row">
-      <text class="tip-dot">•</text>
-      <text class="tip-text">听拍音减差异</text>
-    </view>
-    <view class="tips-row">
-      <text class="tip-dot">•</text>
-      <text class="tip-text">回到一弦复核</text>
-    </view>
-  </view>
 </view>

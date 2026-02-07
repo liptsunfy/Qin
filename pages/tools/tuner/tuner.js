@@ -444,15 +444,15 @@ Page({
       rms += value * value;
     }
     rms = Math.sqrt(rms / data.length);
-    if (rms < 0.01) {
+    if (rms < 0.008) {
       return null;
     }
-    const frequency = this.autoCorrelate(floatBuffer, sampleRate);
-    if (!frequency || frequency === -1) {
+    const result = this.autoCorrelate(floatBuffer, sampleRate);
+    if (!result || result.frequency === -1 || result.confidence < 0.15) {
       return null;
     }
     const volume = Math.min(100, Math.round(rms * 200));
-    return { frequency, volume };
+    return { frequency: result.frequency, volume };
   },
 
   smoothFrequency(frequency) {
@@ -461,7 +461,7 @@ Page({
       this.frequencyHistory = [];
     }
     this.frequencyHistory.push(frequency);
-    if (this.frequencyHistory.length > 5) {
+    if (this.frequencyHistory.length > 7) {
       this.frequencyHistory.shift();
     }
     const sorted = [...this.frequencyHistory].sort((a, b) => a - b);
@@ -481,7 +481,7 @@ Page({
 
     const trimmed = buffer.slice(start, end);
     const trimmedSize = trimmed.length;
-    if (trimmedSize < 2) return -1;
+    if (trimmedSize < 2) return { frequency: -1, confidence: 0 };
 
     for (let offset = 0; offset < trimmedSize; offset += 1) {
       let sum = 0;
@@ -503,7 +503,7 @@ Page({
       }
     }
 
-    if (maxPos <= 0) return -1;
+    if (maxPos <= 0) return { frequency: -1, confidence: 0 };
     let t0 = maxPos;
     if (maxPos < trimmedSize - 1) {
       const x1 = correlations[maxPos - 1];
@@ -516,7 +516,10 @@ Page({
       }
     }
 
-    return sampleRate / t0;
+    return {
+      frequency: sampleRate / t0,
+      confidence: maxVal / trimmedSize
+    };
   },
 
   frequencyToCents(current, target) {
