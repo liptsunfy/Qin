@@ -1,17 +1,19 @@
 .tuner-page{padding:16rpx;background:linear-gradient(180deg,#f6f7fb 0%,#f4f5f8 100%);min-height:100vh;box-sizing:border-box}
-.card{background:#fff;border-radius:24rpx;padding:20rpx;margin-bottom:14rpx;box-shadow:0 10rpx 24rpx rgba(18,23,40,0.08)}
+.card{background:#fff;border-radius:24rpx;padding:18rpx;margin-bottom:12rpx;box-shadow:0 10rpx 24rpx rgba(18,23,40,0.08)}
 .hero{background:linear-gradient(135deg,#1d1f25 0%,#3b3f55 100%);color:#fff;box-shadow:none}
 .hero-title{font-size:36rpx;font-weight:600;color:#fff;letter-spacing:1rpx}
-.settings-card{display:flex;flex-direction:column;gap:12rpx}
+.settings-card{display:flex;flex-direction:column;gap:10rpx}
 .setting-row{display:flex;justify-content:space-between;align-items:center;gap:14rpx;flex-wrap:wrap}
 .setting-row.compact{align-items:flex-start}
 .setting-label{font-size:24rpx;color:#2d2f36;font-weight:600}
 .setting-value{display:flex;flex-direction:column;align-items:flex-end;gap:6rpx;text-align:right}
 .setting-desc{font-size:20rpx;color:#8c93a5}
-.setting-input{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:12rpx}
-.a4-input{width:140rpx;height:64rpx;border-radius:16rpx;background:#f3f5fa;text-align:center;font-size:26rpx;color:#2d2f36;font-weight:600}
-.setting-value-text{font-size:22rpx;color:#5b6270;min-width:100rpx;text-align:right;font-weight:600}
-.status-card{display:flex;flex-direction:column;gap:14rpx}
+.setting-input{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:8rpx}
+.a4-stepper{display:flex;align-items:center;gap:8rpx;background:#f3f5fa;border-radius:18rpx;padding:6rpx 10rpx}
+.step-btn{width:52rpx;height:52rpx;border-radius:14rpx;background:#ffffff;color:#2d2f36;font-weight:700;font-size:30rpx;line-height:52rpx;text-align:center}
+.a4-input{width:110rpx;height:52rpx;border-radius:12rpx;background:#ffffff;text-align:center;font-size:24rpx;color:#2d2f36;font-weight:600}
+.setting-value-text{font-size:22rpx;color:#5b6270;min-width:60rpx;text-align:right;font-weight:600}
+.status-card{display:flex;flex-direction:column;gap:12rpx}
 .status-header{display:flex;justify-content:space-between;align-items:center}
 .status-main{display:flex;align-items:baseline;gap:12rpx}
 .status-string{font-size:34rpx;font-weight:600;color:#222}

@@ -14,13 +14,17 @@
     <view class="setting-row compact">
       <text class="setting-label">基准音 A4</text>
       <view class="setting-input">
-        <input
-          class="a4-input"
-          type="number"
-          value="{{a4}}"
-          maxlength="3"
-          bindinput="onA4Input"
-        />
+        <view class="a4-stepper">
+          <button class="step-btn" data-step="-1" bindtap="adjustA4">-</button>
+          <input
+            class="a4-input"
+            type="number"
+            value="{{a4}}"
+            maxlength="3"
+            bindinput="onA4Input"
+          />
+          <button class="step-btn" data-step="1" bindtap="adjustA4">+</button>
+        </view>
         <text class="setting-value-text">Hz</text>
       </view>
     </view>

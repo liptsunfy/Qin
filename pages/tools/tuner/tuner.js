@@ -314,6 +314,15 @@ Page({
     this.updateTuningFeedback(true);
   },
 
+  adjustA4(e) {
+    const step = Number(e.currentTarget.dataset.step || 0);
+    if (!step) return;
+    const next = Math.max(415, Math.min(466, this.data.a4 + step));
+    this.setData({ a4: next });
+    this.applyPreset(this.data.currentPresetIndex);
+    this.updateTuningFeedback(true);
+  },
+
   onMarkTuned() {
     const nextStrings = this.data.strings.map((item, index) => {
       if (index === this.data.currentStringIndex) {
