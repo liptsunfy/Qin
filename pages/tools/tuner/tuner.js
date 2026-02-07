@@ -28,7 +28,8 @@ Page({
     isTonePlaying: false,
     statusText: '未开始监听',
     statusLevel: 'idle',
-    needleDeg: 0
+    needleDeg: 0,
+    stability: 0
   },
 
   onLoad() {
@@ -50,27 +51,31 @@ Page({
   },
 
   setupPresets() {
-    // 正调以 C 调为基准：五六一二三五六 -> G2/A2/C3/D3/E3/G3/A3
+    // 正调（F调）以 A4=440Hz 为基准：一弦至七弦 C5/D5/F5/G5/A4/C4/D4
     const tuningPresets = [
       {
         name: '正调',
-        description: '五六一二三五六（C调）',
-        notes: ['G2', 'A2', 'C3', 'D3', 'E3', 'G3', 'A3']
+        description: '一二四五六一二（F调）',
+        notes: ['C5', 'D5', 'F5', 'G5', 'A4', 'C4', 'D4'],
+        jianpu: ['1', '2', '4', '5', '6', '1', '2']
       },
       {
         name: '紧五弦',
         description: '五弦升高',
-        notes: ['G2', 'A2', 'C3', 'D3', 'F#3', 'G3', 'A3']
+        notes: ['G2', 'A2', 'C3', 'D3', 'F#3', 'G3', 'A3'],
+        jianpu: ['5', '6', '1', '2', '#4', '5', '6']
       },
       {
         name: '慢三弦',
         description: '三弦降低',
-        notes: ['G2', 'A2', 'B2', 'D3', 'E3', 'G3', 'A3']
+        notes: ['G2', 'A2', 'B2', 'D3', 'E3', 'G3', 'A3'],
+        jianpu: ['5', '6', '7', '2', '3', '5', '6']
       },
       {
         name: '紧五慢三',
         description: '五弦升高，三弦降低',
-        notes: ['G2', 'A2', 'B2', 'D3', 'F#3', 'G3', 'A3']
+        notes: ['G2', 'A2', 'B2', 'D3', 'F#3', 'G3', 'A3'],
+        jianpu: ['5', '6', '7', '2', '#4', '5', '6']
       }
     ];
     this.setData({
@@ -110,6 +115,7 @@ Page({
       return {
         id: i + 1,
         name: stringNames[i] || `${i + 1}弦`,
+        jianpu: preset.jianpu ? preset.jianpu[i] : '',
         note: noteName,
         octave,
         tuned: false,
@@ -187,6 +193,7 @@ Page({
       cents: clamped,
       currentFrequency: 0,
       volume: 0,
+      stability: 0,
       statusText,
       statusLevel,
       needleDeg: this.centsToNeedle(clamped)
@@ -208,6 +215,13 @@ Page({
     this.setData({
       autoTune: e.detail.value
     });
+  },
+
+  onPresetChange(e) {
+    const index = Number(e.detail.value);
+    if (Number.isNaN(index)) return;
+    this.applyPreset(index);
+    this.updateTuningFeedback(true);
   },
 
   onToggleListen() {
@@ -232,6 +246,7 @@ Page({
         });
         this.lastFrameAt = 0;
         this.frequencyHistory = [];
+        this.stabilityHistory = [];
         this.recorderManager.start({
           format: 'PCM',
           sampleRate: 44100,
@@ -247,6 +262,7 @@ Page({
               cents: 0,
               currentFrequency: 0,
               volume: 0,
+              stability: 0,
               statusText: '未检测到稳定音高',
               statusLevel: 'idle'
             });
@@ -287,6 +303,7 @@ Page({
     }
     this.lastFrameAt = 0;
     this.frequencyHistory = [];
+    this.stabilityHistory = [];
   },
 
   maybeAutoAdvance() {
@@ -402,21 +419,25 @@ Page({
         cents: 0,
         currentFrequency: 0,
         volume: 0,
+        stability: 0,
         statusText: '未检测到稳定音高',
         statusLevel: 'idle'
       });
       return;
     }
-    const { frequency, volume } = detection;
+    const { frequency, volume, stability } = detection;
     const smoothedFrequency = this.smoothFrequency(frequency);
-    const match = this.findClosestString(smoothedFrequency);
-    if (match) {
-      this.setData({
-        currentStringIndex: match.index,
-        currentString: match.string
-      });
+    let stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
+    if (this.data.autoTune) {
+      const match = this.findClosestString(smoothedFrequency);
+      if (match) {
+        this.setData({
+          currentStringIndex: match.index,
+          currentString: match.string
+        });
+        stringItem = match.string;
+      }
     }
-    const stringItem = match ? match.string : (this.data.currentString || this.data.strings[this.data.currentStringIndex]);
     const targetFrequency = stringItem ? stringItem.frequency : this.data.a4;
     const deviation = this.frequencyToCents(smoothedFrequency, targetFrequency);
     const { statusText, statusLevel } = this.getStatusFromDeviation(deviation);
@@ -428,6 +449,7 @@ Page({
       cents: deviation,
       currentFrequency,
       volume,
+      stability,
       statusText,
       statusLevel,
       needleDeg: this.centsToNeedle(deviation)
@@ -451,15 +473,16 @@ Page({
       rms += value * value;
     }
     rms = Math.sqrt(rms / data.length);
-    if (rms < 0.008) {
+    if (rms < 0.005) {
       return null;
     }
-    const result = this.detectPitchWithFft(floatBuffer, sampleRate);
-    if (!result || result.frequency === -1 || result.confidence < 0.12) {
+    const result = this.detectPitchWithYin(floatBuffer, sampleRate);
+    if (!result || result.frequency === -1 || result.confidence < 0.08) {
       return null;
     }
-    const volume = Math.min(100, Math.round(rms * 200));
-    return { frequency: result.frequency, volume };
+    const volume = Math.min(100, Math.round(rms * 220));
+    const stability = Math.min(100, Math.round(result.confidence * 100));
+    return { frequency: result.frequency, volume, stability };
   },
 
   smoothFrequency(frequency) {
@@ -476,64 +499,49 @@ Page({
     return sorted[mid];
   },
 
-  detectPitchWithFft(buffer, sampleRate) {
-    const size = 2048;
-    if (buffer.length < size) return { frequency: -1, confidence: 0 };
-    const slice = buffer.slice(0, size);
-    const { magnitudes } = this.fftReal(slice);
-    const minFreq = 60;
-    const maxFreq = 1200;
-    const minIndex = Math.floor((minFreq / sampleRate) * size);
-    const maxIndex = Math.min(magnitudes.length - 1, Math.floor((maxFreq / sampleRate) * size));
-    let peakIndex = -1;
-    let peakValue = 0;
-    for (let i = minIndex; i <= maxIndex; i += 1) {
-      if (magnitudes[i] > peakValue) {
-        peakValue = magnitudes[i];
-        peakIndex = i;
+  detectPitchWithYin(buffer, sampleRate) {
+    const size = Math.min(2048, buffer.length);
+    if (size < 512) return { frequency: -1, confidence: 0 };
+    const yinBuffer = new Float32Array(size / 2);
+    for (let tau = 1; tau < yinBuffer.length; tau += 1) {
+      let sum = 0;
+      for (let i = 0; i < yinBuffer.length; i += 1) {
+        const delta = buffer[i] - buffer[i + tau];
+        sum += delta * delta;
       }
+      yinBuffer[tau] = sum;
     }
-    if (peakIndex <= 0) return { frequency: -1, confidence: 0 };
-    let fundamental = (peakIndex * sampleRate) / size;
-    const harmonicCandidates = [2, 3, 4];
-    harmonicCandidates.forEach((divisor) => {
-      const index = Math.floor(peakIndex / divisor);
-      if (index >= minIndex && magnitudes[index] > peakValue * 0.2) {
-        fundamental = (index * sampleRate) / size;
-      }
-    });
-    return {
-      frequency: fundamental,
-      confidence: peakValue / (size * 0.5)
-    };
-  },
-
-  fftReal(buffer) {
-    const size = buffer.length;
-    const real = buffer.slice();
-    const imag = new Float32Array(size);
-    for (let step = 1; step < size; step *= 2) {
-      const jump = step * 2;
-      const delta = Math.PI / step;
-      for (let group = 0; group < step; group += 1) {
-        const cos = Math.cos(delta * group);
-        const sin = -Math.sin(delta * group);
-        for (let pair = group; pair < size; pair += jump) {
-          const match = pair + step;
-          const tre = cos * real[match] - sin * imag[match];
-          const tim = cos * imag[match] + sin * real[match];
-          real[match] = real[pair] - tre;
-          imag[match] = imag[pair] - tim;
-          real[pair] += tre;
-          imag[pair] += tim;
+    yinBuffer[0] = 1;
+    let runningSum = 0;
+    for (let tau = 1; tau < yinBuffer.length; tau += 1) {
+      runningSum += yinBuffer[tau];
+      yinBuffer[tau] *= tau / runningSum;
+    }
+    const threshold = 0.15;
+    let tauEstimate = -1;
+    for (let tau = 2; tau < yinBuffer.length; tau += 1) {
+      if (yinBuffer[tau] < threshold) {
+        while (tau + 1 < yinBuffer.length && yinBuffer[tau + 1] < yinBuffer[tau]) {
+          tau += 1;
         }
+        tauEstimate = tau;
+        break;
       }
     }
-    const magnitudes = new Float32Array(size / 2);
-    for (let i = 0; i < magnitudes.length; i += 1) {
-      magnitudes[i] = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+    if (tauEstimate === -1) return { frequency: -1, confidence: 0 };
+    let betterTau = tauEstimate;
+    if (tauEstimate > 1 && tauEstimate + 1 < yinBuffer.length) {
+      const s0 = yinBuffer[tauEstimate - 1];
+      const s1 = yinBuffer[tauEstimate];
+      const s2 = yinBuffer[tauEstimate + 1];
+      const denom = s0 + s2 - 2 * s1;
+      if (denom !== 0) {
+        betterTau = tauEstimate + (s0 - s2) / (2 * denom);
+      }
     }
-    return { magnitudes };
+    const frequency = sampleRate / betterTau;
+    const confidence = 1 - yinBuffer[tauEstimate];
+    return { frequency, confidence };
   },
 
   frequencyToCents(current, target) {
@@ -628,8 +636,9 @@ Page({
     view.setUint32(40, sampleCount * 2, true);
     for (let i = 0; i < sampleCount; i += 1) {
       const t = i / sampleRate;
-      const sample = Math.sin(2 * Math.PI * frequency * t);
-      view.setInt16(44 + i * 2, sample * 32767, true);
+      const env = this.pianoEnvelope(t, durationSeconds);
+      const sample = this.pianoWave(frequency, t) * env;
+      view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, sample)) * 32767, true);
     }
     const fs = wx.getFileSystemManager();
     const filePath = `${wx.env.USER_DATA_PATH}/tone_${Math.round(frequency)}.wav`;
@@ -640,5 +649,43 @@ Page({
       wx.showToast({ title: '参考音生成失败', icon: 'none' });
       return null;
     }
+  },
+
+  pianoWave(frequency, time) {
+    const detune = 0.5;
+    const base = frequency;
+    const harmonics = [
+      { ratio: 1, amp: 0.8 },
+      { ratio: 2, amp: 0.5 },
+      { ratio: 3, amp: 0.35 },
+      { ratio: 4, amp: 0.2 },
+      { ratio: 5, amp: 0.15 }
+    ];
+    let value = 0;
+    harmonics.forEach(({ ratio, amp }) => {
+      const freq = base * ratio;
+      value += amp * Math.sin(2 * Math.PI * freq * time);
+      value += amp * 0.3 * Math.sin(2 * Math.PI * (freq + detune) * time);
+    });
+    return value / 2.2;
+  },
+
+  pianoEnvelope(time, duration) {
+    const attack = 0.02;
+    const decay = 0.18;
+    const sustainLevel = 0.6;
+    const release = 0.25;
+    if (time < attack) {
+      return time / attack;
+    }
+    if (time < attack + decay) {
+      const t = (time - attack) / decay;
+      return 1 - (1 - sustainLevel) * t;
+    }
+    if (time < duration - release) {
+      return sustainLevel;
+    }
+    const t = (time - (duration - release)) / release;
+    return sustainLevel * (1 - t);
   }
 });
