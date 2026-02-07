@@ -67,6 +67,17 @@ const ToolsManager = {
       category: '计算工具',
       hasPage: true,
       pagePath: '/pages/tools/calculator/calculator'
+    },
+    {
+      id: 'ywt',
+      name: '音位图',
+      icon: '🗺️',
+      description: '古琴音位图参考',
+      enabled: true,
+      version: '1.0.0',
+      category: '计算工具',
+      hasPage: true,
+      pagePath: '/pages/tools/ywt/ywt'
     }
   ],
 
