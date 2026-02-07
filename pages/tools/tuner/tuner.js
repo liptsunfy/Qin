@@ -7,6 +7,7 @@ Page({
     tuningPresetNames: [],
     currentPresetIndex: 0,
     a4: 440,
+    a4Options: [432, 440, 442],
     strings: [
       { id: 1, name: '一弦', note: 'D', octave: '4', tuned: false, frequency: 293.66 },
       { id: 2, name: '二弦', note: 'A', octave: '4', tuned: false, frequency: 440.0 },
