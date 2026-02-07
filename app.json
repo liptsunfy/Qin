@@ -4,6 +4,7 @@
     "pages/tools/tuner/tuner",
     "pages/tools/metronome/metronome",
     "pages/tools/recorder/recorder",
+    "pages/tools/recorder-detail/recorder-detail",
     "pages/tools/notation/notation",
     "pages/tools/knowledge/knowledge",
     "pages/tools/calculator/calculator",
@@ -48,8 +49,5 @@
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",
-  "__usePrivacyCheck__": true,
-  "requiredPrivateInfos": [
-    "getLocation"
-  ]
+  "__usePrivacyCheck__": true
 }
