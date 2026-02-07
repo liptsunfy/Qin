@@ -7,6 +7,7 @@ Page({
     tuningPresetNames: [],
     currentPresetIndex: 0,
     a4: 440,
+    a4Options: [432, 440, 442],
     strings: [
       { id: 1, name: '一弦', note: 'D', octave: '4', tuned: false, frequency: 293.66 },
       { id: 2, name: '二弦', note: 'A', octave: '4', tuned: false, frequency: 440.0 },
@@ -309,6 +310,14 @@ Page({
 
   onA4Change(e) {
     const value = Number(e.detail.value);
+    this.setData({ a4: value });
+    this.applyPreset(this.data.currentPresetIndex);
+    this.updateTuningFeedback(true);
+  },
+
+  onA4PresetTap(e) {
+    const value = Number(e.currentTarget.dataset.value);
+    if (!value) return;
     this.setData({ a4: value });
     this.applyPreset(this.data.currentPresetIndex);
     this.updateTuningFeedback(true);
