@@ -305,9 +305,11 @@ Page({
     });
   },
 
-  onA4Change(e) {
+  onA4Input(e) {
     const value = Number(e.detail.value);
-    this.setData({ a4: value });
+    if (!value) return;
+    const clamped = Math.max(415, Math.min(466, value));
+    this.setData({ a4: clamped });
     this.applyPreset(this.data.currentPresetIndex);
     this.updateTuningFeedback(true);
   },

@@ -13,20 +13,15 @@
     </view>
     <view class="setting-row compact">
       <text class="setting-label">基准音 A4</text>
-      <view class="a4-options">
-        <view
-          wx:for="{{a4Options}}"
-          wx:key="value"
-          class="a4-chip {{item === a4 ? 'active' : ''}}"
-          data-value="{{item}}"
-          bindtap="onA4PresetTap"
-        >
-          {{item}}
-        </view>
-      </view>
-      <view class="setting-slider">
-        <slider min="415" max="466" step="1" value="{{a4}}" bindchange="onA4Change" />
-        <text class="setting-value-text">{{a4}} Hz</text>
+      <view class="setting-input">
+        <input
+          class="a4-input"
+          type="number"
+          value="{{a4}}"
+          maxlength="3"
+          bindinput="onA4Input"
+        />
+        <text class="setting-value-text">Hz</text>
       </view>
     </view>
   </view>
