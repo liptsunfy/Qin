@@ -52,7 +52,7 @@ const ToolsManager = {
       icon: '🎤',
       description: '练习录音回放',
       enabled: true,
-      version: '1.0.0',
+      version: '1.1.0',
       category: '练习工具',
       hasPage: true,
       pagePath: '/pages/tools/recorder/recorder'
