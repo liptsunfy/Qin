@@ -14,14 +14,25 @@
         </view>
       </picker>
     </view>
-    <view class="setting-row">
+    <view class="setting-row compact">
       <text class="setting-label">基准音 A4</text>
+      <view class="a4-options">
+        <view
+          wx:for="{{a4Options}}"
+          wx:key="value"
+          class="a4-chip {{item === a4 ? 'active' : ''}}"
+          data-value="{{item}}"
+          bindtap="onA4PresetTap"
+        >
+          {{item}}
+        </view>
+      </view>
       <view class="setting-slider">
         <slider min="415" max="466" step="1" value="{{a4}}" bindchange="onA4Change" />
         <text class="setting-value-text">{{a4}} Hz</text>
       </view>
     </view>
-    <view class="setting-hint">选择弦位 → 开始监听 → 观察指示条</view>
+    <view class="setting-hint">选择弦位 → 开始监听 → 观察指针</view>
   </view>
 
   <view class="card status-card" wx:if="{{strings.length}}">
@@ -43,13 +54,14 @@
       <text>偏差 {{cents}} cents</text>
       <text>音量 {{volume}}</text>
     </view>
-    <text class="status-target">目标频率 {{currentString ? currentString.frequency.toFixed(1) : '--'}} Hz</text>
-    <view class="meter">
-      <view class="meter-track">
-        <view class="meter-center"></view>
-        <view class="meter-fill" style="transform: translateX({{tuningValue}}%);"></view>
+    <view class="dial">
+      <view class="dial-scale">
+        <view class="dial-tick left"></view>
+        <view class="dial-tick center"></view>
+        <view class="dial-tick right"></view>
       </view>
-      <view class="meter-labels">
+      <view class="dial-needle" style="transform: rotate({{needleDeg}}deg);"></view>
+      <view class="dial-labels">
         <text>偏低</text>
         <text>标准</text>
         <text>偏高</text>
@@ -64,7 +76,7 @@
     </view>
   </view>
 
-  <view class="card">
+  <view class="card compact-card">
     <view class="section-header">
       <text class="section-title">弦位列表</text>
       <text class="section-action" bindtap="onResetTuned">重置</text>
@@ -79,18 +91,17 @@
   </view>
 
   <view class="card tips">
-    <text class="section-title">调音提示</text>
-    <view class="tip-item">
+    <view class="tips-row">
       <text class="tip-dot">•</text>
-      <text class="tip-text">先松后紧，避免拉断弦。</text>
+      <text class="tip-text">先松后紧</text>
     </view>
-    <view class="tip-item">
+    <view class="tips-row">
       <text class="tip-dot">•</text>
-      <text class="tip-text">听到“拍音”时，逐步减小差异。</text>
+      <text class="tip-text">听拍音减差异</text>
     </view>
-    <view class="tip-item">
+    <view class="tips-row">
       <text class="tip-dot">•</text>
-      <text class="tip-text">每根弦调完后回到一弦复核一次。</text>
+      <text class="tip-text">回到一弦复核</text>
     </view>
   </view>
 </view>

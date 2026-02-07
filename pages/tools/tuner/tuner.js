@@ -7,6 +7,7 @@ Page({
     tuningPresetNames: [],
     currentPresetIndex: 0,
     a4: 440,
+    a4Options: [432, 440, 442],
     strings: [
       { id: 1, name: '一弦', note: 'D', octave: '4', tuned: false, frequency: 293.66 },
       { id: 2, name: '二弦', note: 'A', octave: '4', tuned: false, frequency: 440.0 },
@@ -25,7 +26,8 @@ Page({
     autoTune: false,
     isListening: false,
     statusText: '未开始监听',
-    statusLevel: 'idle'
+    statusLevel: 'idle',
+    needleDeg: 0
   },
 
   onLoad() {
@@ -45,26 +47,27 @@ Page({
   },
 
   setupPresets() {
+    // 正调以 C 调为基准：五六一二三五六 -> G2/A2/C3/D3/E3/G3/A3
     const tuningPresets = [
       {
         name: '正调',
-        description: '常用五六一二三五六',
-        notes: ['D4', 'A4', 'E4', 'B3', 'F4', 'C4', 'G4']
+        description: '五六一二三五六（C调）',
+        notes: ['G2', 'A2', 'C3', 'D3', 'E3', 'G3', 'A3']
       },
       {
         name: '紧五弦',
         description: '五弦升高',
-        notes: ['D4', 'A4', 'E4', 'B3', 'G4', 'C4', 'G4']
+        notes: ['G2', 'A2', 'C3', 'D3', 'F#3', 'G3', 'A3']
       },
       {
         name: '慢三弦',
         description: '三弦降低',
-        notes: ['D4', 'A4', 'D4', 'B3', 'F4', 'C4', 'G4']
+        notes: ['G2', 'A2', 'B2', 'D3', 'E3', 'G3', 'A3']
       },
       {
         name: '紧五慢三',
         description: '五弦升高，三弦降低',
-        notes: ['D4', 'A4', 'D4', 'B3', 'G4', 'C4', 'G4']
+        notes: ['G2', 'A2', 'B2', 'D3', 'F#3', 'G3', 'A3']
       }
     ];
     this.setData({
@@ -182,7 +185,8 @@ Page({
       currentFrequency: 0,
       volume: 0,
       statusText,
-      statusLevel
+      statusLevel,
+      needleDeg: this.centsToNeedle(clamped)
     });
   },
 
@@ -311,6 +315,14 @@ Page({
     this.updateTuningFeedback(true);
   },
 
+  onA4PresetTap(e) {
+    const value = Number(e.currentTarget.dataset.value);
+    if (!value) return;
+    this.setData({ a4: value });
+    this.applyPreset(this.data.currentPresetIndex);
+    this.updateTuningFeedback(true);
+  },
+
   onMarkTuned() {
     const nextStrings = this.data.strings.map((item, index) => {
       if (index === this.data.currentStringIndex) {
@@ -410,7 +422,8 @@ Page({
       currentFrequency,
       volume,
       statusText,
-      statusLevel
+      statusLevel,
+      needleDeg: this.centsToNeedle(deviation)
     });
 
     if (this.data.autoTune) {
@@ -510,5 +523,10 @@ Page({
     if (!current || !target) return 0;
     const cents = 1200 * Math.log2(current / target);
     return Number(Math.max(-50, Math.min(50, cents)).toFixed(1));
+  },
+
+  centsToNeedle(cents) {
+    const clamped = Math.max(-50, Math.min(50, cents));
+    return (clamped / 50) * 45;
   }
 });
