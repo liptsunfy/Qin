@@ -25,7 +25,8 @@ Page({
     autoTune: false,
     isListening: false,
     statusText: '未开始监听',
-    statusLevel: 'idle'
+    statusLevel: 'idle',
+    needleDeg: 0
   },
 
   onLoad() {
@@ -45,26 +46,27 @@ Page({
   },
 
   setupPresets() {
+    // 正调以 C 调为基准：五六一二三五六 -> G2/A2/C3/D3/E3/G3/A3
     const tuningPresets = [
       {
         name: '正调',
-        description: '常用五六一二三五六',
-        notes: ['D4', 'A4', 'E4', 'B3', 'F4', 'C4', 'G4']
+        description: '五六一二三五六（C调）',
+        notes: ['G2', 'A2', 'C3', 'D3', 'E3', 'G3', 'A3']
       },
       {
         name: '紧五弦',
         description: '五弦升高',
-        notes: ['D4', 'A4', 'E4', 'B3', 'G4', 'C4', 'G4']
+        notes: ['G2', 'A2', 'C3', 'D3', 'F#3', 'G3', 'A3']
       },
       {
         name: '慢三弦',
         description: '三弦降低',
-        notes: ['D4', 'A4', 'D4', 'B3', 'F4', 'C4', 'G4']
+        notes: ['G2', 'A2', 'B2', 'D3', 'E3', 'G3', 'A3']
       },
       {
         name: '紧五慢三',
         description: '五弦升高，三弦降低',
-        notes: ['D4', 'A4', 'D4', 'B3', 'G4', 'C4', 'G4']
+        notes: ['G2', 'A2', 'B2', 'D3', 'F#3', 'G3', 'A3']
       }
     ];
     this.setData({
@@ -182,7 +184,8 @@ Page({
       currentFrequency: 0,
       volume: 0,
       statusText,
-      statusLevel
+      statusLevel,
+      needleDeg: this.centsToNeedle(clamped)
     });
   },
 
@@ -410,7 +413,8 @@ Page({
       currentFrequency,
       volume,
       statusText,
-      statusLevel
+      statusLevel,
+      needleDeg: this.centsToNeedle(deviation)
     });
 
     if (this.data.autoTune) {
@@ -431,15 +435,15 @@ Page({
       rms += value * value;
     }
     rms = Math.sqrt(rms / data.length);
-    if (rms < 0.01) {
+    if (rms < 0.008) {
       return null;
     }
-    const frequency = this.autoCorrelate(floatBuffer, sampleRate);
-    if (!frequency || frequency === -1) {
+    const result = this.autoCorrelate(floatBuffer, sampleRate);
+    if (!result || result.frequency === -1 || result.confidence < 0.15) {
       return null;
     }
     const volume = Math.min(100, Math.round(rms * 200));
-    return { frequency, volume };
+    return { frequency: result.frequency, volume };
   },
 
   smoothFrequency(frequency) {
@@ -448,7 +452,7 @@ Page({
       this.frequencyHistory = [];
     }
     this.frequencyHistory.push(frequency);
-    if (this.frequencyHistory.length > 5) {
+    if (this.frequencyHistory.length > 7) {
       this.frequencyHistory.shift();
     }
     const sorted = [...this.frequencyHistory].sort((a, b) => a - b);
@@ -468,7 +472,7 @@ Page({
 
     const trimmed = buffer.slice(start, end);
     const trimmedSize = trimmed.length;
-    if (trimmedSize < 2) return -1;
+    if (trimmedSize < 2) return { frequency: -1, confidence: 0 };
 
     for (let offset = 0; offset < trimmedSize; offset += 1) {
       let sum = 0;
@@ -490,7 +494,7 @@ Page({
       }
     }
 
-    if (maxPos <= 0) return -1;
+    if (maxPos <= 0) return { frequency: -1, confidence: 0 };
     let t0 = maxPos;
     if (maxPos < trimmedSize - 1) {
       const x1 = correlations[maxPos - 1];
@@ -503,12 +507,20 @@ Page({
       }
     }
 
-    return sampleRate / t0;
+    return {
+      frequency: sampleRate / t0,
+      confidence: maxVal / trimmedSize
+    };
   },
 
   frequencyToCents(current, target) {
     if (!current || !target) return 0;
     const cents = 1200 * Math.log2(current / target);
     return Number(Math.max(-50, Math.min(50, cents)).toFixed(1));
+  },
+
+  centsToNeedle(cents) {
+    const clamped = Math.max(-50, Math.min(50, cents));
+    return (clamped / 50) * 45;
   }
 });

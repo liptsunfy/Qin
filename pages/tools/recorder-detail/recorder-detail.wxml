@@ -1,0 +1,49 @@
+<view class="page">
+  <view class="card detail-card">
+    <view class="record-title">{{record.name}}</view>
+    <view class="record-meta">{{record.durationText}} · {{record.createTimeText}}</view>
+
+    <view class="waveform">
+      <view class="waveform-label">波形预览</view>
+      <view class="waveform-bars">
+        <view
+          wx:for="{{waveformBars}}"
+          wx:key="index"
+          class="wave-bar"
+          style="height: {{item}}rpx"
+        ></view>
+      </view>
+    </view>
+
+    <view class="player">
+      <view class="time-row">
+        <text class="time">{{currentTimeText}}</text>
+        <text class="time">{{durationText}}</text>
+      </view>
+      <slider
+        class="progress"
+        value="{{progress}}"
+        min="0"
+        max="100"
+        step="1"
+        bindchange="onSeek"
+      />
+      <view class="player-actions">
+        <button class="secondary-btn" bindtap="togglePlay">
+          {{isPlaying ? (isPaused ? '继续' : '暂停') : '播放'}}
+        </button>
+        <button class="secondary-btn" bindtap="stopPlayback" wx:if="{{isPlaying}}">停止</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="card action-card">
+    <view class="section-title">文件操作</view>
+    <view class="action-list">
+      <button class="action-btn" bindtap="renameRecording">重命名</button>
+      <button class="action-btn" bindtap="shareRecording">分享</button>
+      <button class="action-btn" bindtap="saveToPhone">另存为</button>
+      <button class="action-btn danger" bindtap="deleteRecording">删除</button>
+    </view>
+  </view>
+</view>
