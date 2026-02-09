@@ -15,11 +15,14 @@ Page({
     hasCheckedIn: false,
     todayRecords: [], // 今天的所有记录
     todayTotalDuration: 0,
+    todayTotalSessions: 0,
     continuousDays: 0,
     
     // 打卡表单
     duration: 30,
     customDuration: '',
+    repeatCount: 1,
+    customRepeatCount: '',
     song: '',
     customSong: '',
     notes: '',
@@ -56,6 +59,7 @@ Page({
     const todayRecords = CheckinManager.getRecordsByDateFromRecords(allRecords, today);
     const hasCheckedIn = todayRecords.length > 0;
     const todayTotalDuration = CheckinManager.getTotalDurationByDateFromRecords(allRecords, today);
+    const todayTotalSessions = todayRecords.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
 
     // 计算连续打卡天数
     const continuousDays = StatsManager.getContinuousDaysFromRecords(allRecords);
@@ -65,11 +69,12 @@ Page({
     const weekRecords = weekDates.map(date => {
       const records = CheckinManager.getRecordsByDateFromRecords(allRecords, date);
       const totalDuration = records.reduce((sum, r) => sum + (r.duration || 0), 0);
+      const totalSessions = records.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
       return {
         date,
         hasRecord: records.length > 0,
         duration: totalDuration,
-        recordCount: records.length,
+        recordCount: totalSessions,
         formattedDate: DateUtil.formatDate(date, 'MM-DD'),
         weekday: DateUtil.getWeekday(date)
       };
@@ -81,7 +86,7 @@ Page({
     allRecords.forEach(r => {
       const name = (r.song || '').trim();
       if (!name) return;
-      songCountMap[name] = (songCountMap[name] || 0) + 1;
+      songCountMap[name] = (songCountMap[name] || 0) + (r.repeatCount || 1);
     });
     const frequentSongs = Object.keys(songCountMap)
       .map(name => ({ name, count: songCountMap[name] }))
@@ -107,13 +112,16 @@ Page({
       hasCheckedIn,
       todayRecords,
       todayTotalDuration,
+      todayTotalSessions,
       continuousDays,
       weekDates,
       weekRecords,
       frequentSongs,
       displaySongs,
       duration: 30,
-      customDuration: ''
+      customDuration: '',
+      repeatCount: 1,
+      customRepeatCount: ''
     });
   },
 
@@ -140,6 +148,23 @@ Page({
     this.setData({
       customDuration: value,
       duration: value ? parseInt(value) : 30
+    });
+  },
+
+  // 练习遍数输入
+  onRepeatCountInput(e) {
+    let value = e.detail.value;
+    if (value) {
+      let num = parseInt(value);
+      if (isNaN(num)) num = 1;
+      if (num < 1) num = 1;
+      if (num > 99) num = 99;
+      value = num.toString();
+    }
+
+    this.setData({
+      customRepeatCount: value,
+      repeatCount: value ? parseInt(value) : 1
     });
   },
 
@@ -180,7 +205,7 @@ Page({
 
   // 提交打卡
   onCheckinSubmit() {
-    const { duration, song, notes } = this.data;
+    const { duration, song, notes, repeatCount } = this.data;
     
     if (!duration || duration < 1) {
       wx.showToast({
@@ -193,6 +218,7 @@ Page({
     const record = {
       date: DateUtil.getToday(),
       duration: parseInt(duration),
+      repeatCount: Math.max(1, parseInt(repeatCount) || 1),
       song: song || '未命名曲目',
       notes: notes || ''
     };
@@ -224,7 +250,9 @@ Page({
           song: '',
           customSong: '',
           notes: '',
-          selectedSongIndex: -1
+          selectedSongIndex: -1,
+          repeatCount: 1,
+          customRepeatCount: ''
         });
       }, 1000);
     } else {

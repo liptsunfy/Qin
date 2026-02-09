@@ -21,6 +21,7 @@
     <view wx:else>
       <text class="status-title">✓ 今日已打卡</text>
       <text class="today-total">今日总时长: {{todayTotalDuration}} 分钟</text>
+      <text class="today-total">今日练习次数: {{todayTotalSessions}} 次</text>
       
       <!-- 今日多条记录 -->
       <view class="today-records">
@@ -35,6 +36,7 @@
             <view class="record-song-row">
               <text class="record-song-name">{{item.song}}</text>
               <text class="record-song-duration">{{item.duration}} 分钟</text>
+              <text wx:if="{{item.repeatCount > 1}}" class="record-repeat-count">×{{item.repeatCount}}</text>
             </view>
             <text wx:if="{{item.notes}}" class="record-notes">{{item.notes}}</text>
           </view>
@@ -75,6 +77,20 @@
           placeholder="在此输入时长（分钟）"
           value="{{customDuration}}"
           bindinput="onCustomDurationInput"
+          class="input"
+        />
+      </view>
+    </view>
+
+    <!-- 练习遍数 -->
+    <view class="form-section">
+      <text class="section-title">练习遍数</text>
+      <view class="custom-duration">
+        <input 
+          type="number"
+          placeholder="在此输入遍数（默认1遍）"
+          value="{{customRepeatCount}}"
+          bindinput="onRepeatCountInput"
           class="input"
         />
       </view>
