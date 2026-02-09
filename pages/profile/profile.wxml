@@ -92,6 +92,7 @@
             <text class="selected-date-item-song">{{item.song}}</text>
           </view>
           <text class="selected-date-item-duration">{{item.duration}} 分钟</text>
+          <text wx:if="{{item.repeatCount > 1}}" class="selected-date-item-repeat">×{{item.repeatCount}}</text>
           <text wx:if="{{item.notes}}" class="selected-date-item-notes">{{item.notes}}</text>
         </view>
       </view>

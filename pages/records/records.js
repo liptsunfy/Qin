@@ -53,7 +53,7 @@ Page({
     const songCountMap = {};
     records.forEach(r => {
       const s = r.song || '未命名曲目';
-      songCountMap[s] = (songCountMap[s] || 0) + 1;
+      songCountMap[s] = (songCountMap[s] || 0) + (r.repeatCount || 1);
     });
 
     const maxSongCount = Math.max(...Object.values(songCountMap), 0);
@@ -118,9 +118,10 @@ Page({
     });
 
     const dayCount = new Set(filteredRecords.map(record => record.date)).size;
+    const totalSessions = filteredRecords.reduce((sum, record) => sum + (record.repeatCount || 1), 0);
     const filterHint = filteredRecords.length === 0
       ? '当前范围内没有练习记录'
-      : `筛选到 ${filteredRecords.length} 条记录，覆盖 ${dayCount} 天`;
+      : `筛选到 ${totalSessions} 次练习，覆盖 ${dayCount} 天`;
 
     return { recordGroups, filterHint };
   },
@@ -200,7 +201,7 @@ Page({
       }
       const bucket = buckets.find(item => normalizedHour >= item.start && normalizedHour < item.end);
       if (bucket) {
-        bucket.count += 1;
+        bucket.count += (record.repeatCount || 1);
       }
     });
 

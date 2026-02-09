@@ -336,7 +336,7 @@ const StatsManager = {
   getMonthlyStatsFromRecords(records) {
     const days = new Set((records || []).map(r => r.date)).size; // 有练习的天数
     const totalDuration = (records || []).reduce((sum, r) => sum + (r.duration || 0), 0);
-    const totalRecords = (records || []).length; // 总记录数
+    const totalRecords = (records || []).reduce((sum, r) => sum + (r.repeatCount || 1), 0); // 总练习次数
     const avgDuration = days > 0 ? Math.round(totalDuration / days * 10) / 10 : 0;
 
     return {
@@ -354,7 +354,7 @@ const StatsManager = {
     const days = new Set(records.map(r => r.date)).size; // 有练习的天数
     const totalDuration = records.reduce((sum, r) => sum + (r.duration || 0), 0);
     const totalHours = Math.round(totalDuration / 60 * 10) / 10;
-    const totalRecords = records.length; // 总记录数
+    const totalRecords = records.reduce((sum, r) => sum + (r.repeatCount || 1), 0); // 总练习次数
     const avgDuration = days > 0 ? Math.round(totalDuration / days * 10) / 10 : 0;
     
     return {
@@ -385,7 +385,7 @@ const StatsManager = {
         };
       }
       
-      songStats[song].count++;
+      songStats[song].count += (record.repeatCount || 1);
       songStats[song].totalDuration += record.duration || 0;
       
       // 更新最后练习时间
@@ -447,7 +447,7 @@ const StatsManager = {
         };
       }
       
-      recentSongs[song].count++;
+      recentSongs[song].count += (record.repeatCount || 1);
       recentSongs[song].totalDuration += record.duration || 0;
     });
     

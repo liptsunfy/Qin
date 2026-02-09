@@ -297,7 +297,7 @@ Page({
   deleteSongRecords(songName) {
     wx.showModal({
       title: '确认删除',
-      content: `确定要删除曲目"${songName}"的所有${this.data.songStats.find(s => s.name === songName)?.count || 0}条记录吗？此操作不可恢复。`,
+      content: `确定要删除曲目"${songName}"的所有${this.data.songStats.find(s => s.name === songName)?.count || 0}次练习吗？此操作不可恢复。`,
       confirmColor: '#ff4444',
       success: (res) => {
         if (res.confirm) {
@@ -342,7 +342,7 @@ Page({
           records: []
         };
       }
-      monthRecords[record.date].count += 1;
+      monthRecords[record.date].count += (record.repeatCount || 1);
       monthRecords[record.date].totalDuration += (record.duration || 0);
       monthRecords[record.date].records.push(record);
     });
@@ -651,7 +651,7 @@ Page({
     // 当日数据
     const dayRecords = CheckinManager.getRecordsByDate(shareDate) || [];
     const dayTotalMinutes = dayRecords.reduce((s, r) => s + (r.duration || 0), 0);
-    const daySessions = dayRecords.length;
+    const daySessions = dayRecords.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
 
     // 近 7 天（含当日）
     const weekStart = DateUtil.addDays(shareDate, -6);
@@ -663,7 +663,8 @@ Page({
       const d = DateUtil.addDays(weekStart, i);
       const rec = CheckinManager.getRecordsByDate(d) || [];
       const m = rec.reduce((s, r) => s + (r.duration || 0), 0);
-      weekDailyMinutes.push({ date: d, minutes: m, sessions: rec.length });
+      const sessions = rec.reduce((s, r) => s + (r.repeatCount || 1), 0);
+      weekDailyMinutes.push({ date: d, minutes: m, sessions });
     }
     const weekSessions = weekDailyMinutes.reduce((s, it) => s + (it.sessions || 0), 0);
     const weekAvgDailyMinutes = Math.round((weekStats.totalDuration / 7) * 10) / 10;
@@ -697,9 +698,10 @@ Page({
         .forEach(r => {
           const t = (r.createTime || '').slice(11, 16) || '--:--';
           const song = r.song || '未命名曲目';
-          content += `${t} · ${r.duration || 0} 分钟 · ${song}\n`;
+          const repeatText = (r.repeatCount || 1) > 1 ? ` ×${r.repeatCount}` : '';
+          content += `${t} · ${r.duration || 0} 分钟${repeatText} · ${song}\n`;
         });
-      if (dayRecords.length > 5) content += `…共 ${dayRecords.length} 条\n`;
+      if (dayRecords.length > 5) content += `…共 ${daySessions} 次\n`;
     } else {
       content += `\n当日暂无练习记录。\n`;
     }
@@ -950,7 +952,7 @@ Page({
       const key = (r.song || '').trim() || '未命名曲目';
       const prev = songMap.get(key) || { song: key, minutes: 0, sessions: 0, lastTime: '' };
       prev.minutes += Number(r.duration || 0);
-      prev.sessions += 1;
+      prev.sessions += (r.repeatCount || 1);
       const ct = r.createTime || '';
       if (ct && (!prev.lastTime || ct > prev.lastTime)) prev.lastTime = ct;
       songMap.set(key, prev);
@@ -999,12 +1001,12 @@ Page({
         y += 26;
       });
 
-      const total = (shareStats.dayRecords || []).length;
+      const total = (shareStats.dayRecords || []).reduce((sum, r) => sum + (r.repeatCount || 1), 0);
       const uniqueSongs = songMap.size;
       if (uniqueSongs > rows.length) {
         ctx.setFillStyle(sub);
         ctx.setFontSize(13);
-        ctx.fillText(`…共 ${uniqueSongs} 首曲目 / ${total} 次记录`, pad + 16, listTop + listH - 24);
+        ctx.fillText(`…共 ${uniqueSongs} 首曲目 / ${total} 次练习`, pad + 16, listTop + listH - 24);
       }
     }
 
@@ -1215,7 +1217,7 @@ Page({
       { icon: '📅', label: '练习天数', value: `${stats.days}天` },
       { icon: '⏱️', label: '总时长', value: `${stats.totalHours}小时` },
       { icon: '📈', label: '平均时长', value: `${stats.avgDuration}分钟` },
-      { icon: '🎵', label: '记录条数', value: `${stats.totalRecords}条` }
+      { icon: '🎵', label: '练习次数', value: `${stats.totalRecords}次` }
     ];
     
     const startX = x + 20;
