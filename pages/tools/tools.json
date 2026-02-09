@@ -1,0 +1,7 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "辅助工具",
+  "enablePullDownRefresh": false,
+  "backgroundColor": "#f8f8f8",
+  "backgroundTextStyle": "dark"
+}
