@@ -79,6 +79,7 @@
       <view class="selected-date-header">
         <text class="selected-date-title">{{selectedDate}} 练习记录</text>
         <text class="selected-date-sub">总时长：{{selectedDateTotalDuration}} 分钟</text>
+        <text class="selected-date-sub">练习次数：{{selectedDateSessions}} 次</text>
       </view>
 
       <view wx:if="{{!selectedDateHasRecords}}" class="selected-date-empty">
@@ -92,6 +93,7 @@
             <text class="selected-date-item-song">{{item.song}}</text>
           </view>
           <text class="selected-date-item-duration">{{item.duration}} 分钟</text>
+          <text wx:if="{{item.repeatCount > 1}}" class="selected-date-item-repeat">×{{item.repeatCount}}</text>
           <text wx:if="{{item.notes}}" class="selected-date-item-notes">{{item.notes}}</text>
         </view>
       </view>
@@ -144,6 +146,7 @@
   <view class="action-buttons card">
     <button class="btn btn-primary" bindtap="onShowShareModal">分享打卡记录</button>
     <button class="btn btn-secondary" bindtap="onShowDonate">赞赏支持我们</button>
+    <button class="btn btn-secondary" bindtap="onOpenOfficialArticle">关注公众号</button>
     <button class="btn btn-secondary" bindtap="onAbout">关于习练助手</button>
     <button class="btn btn-secondary" style="color: #ff4444;" bindtap="onClearAllData">清空所有数据</button>
   </view>
