@@ -100,6 +100,7 @@ Page({
     selectedDate: '',
     selectedDateRecords: [],
     selectedDateTotalDuration: 0,
+    selectedDateSessions: 0,
     selectedDateHasRecords: false,
 
     // canvas：用于图文分享，按设备像素比提升清晰度
@@ -254,10 +255,16 @@ Page({
     const songData = this.data.songStats.find(song => song.name === songName);
     
     if (!songData) return;
+
+    const practiceCount = songData.count || 0;
+    const totalDuration = songData.totalDuration || 0;
+    const totalHours = songData.totalHours || 0;
+    const recordDates = (songData.records || []).map(record => record.date);
+    const checkinCount = new Set(recordDates).size;
     
     wx.showModal({
       title: `${songName} - 练习详情`,
-      content: `练习次数: ${songData.count}次\n总时长: ${songData.totalHours}小时\n平均时长: ${songData.avgDuration}分钟/次\n首次练习: ${songData.firstDate}\n最近练习: ${songData.lastDate}`,
+      content: `练习次数: ${practiceCount}次\n练习总时长: ${totalDuration}分钟（${totalHours}小时）\n打卡次数: ${checkinCount}天\n平均时长: ${songData.avgDuration}分钟/次\n首次练习: ${songData.firstDate}\n最近练习: ${songData.lastDate}`,
       showCancel: false,
       confirmText: '查看记录',
       success: (res) => {
@@ -433,12 +440,14 @@ Page({
 
     const records = CheckinManager.getRecordsByDate(dateStr);
     const totalDuration = CheckinManager.getTotalDurationByDate(dateStr);
+    const totalSessions = records.reduce((sum, record) => sum + (record.repeatCount || 1), 0);
 
     // 以“页面内展示”为主（避免频繁弹窗），点击日期后在日历下方展示当日记录
     this.setData({
       selectedDate: dateStr,
       selectedDateRecords: records,
       selectedDateTotalDuration: totalDuration,
+      selectedDateSessions: totalSessions,
       selectedDateHasRecords: records.length > 0
     });
   },
@@ -1432,6 +1441,15 @@ Page({
   closeDonateModal() {
     this.setData({
       showDonateModal: false
+    });
+  },
+
+  // 关注公众号文章
+  onOpenOfficialArticle() {
+    const targetUrl = 'https://mp.weixin.qq.com/s/li3f_Nb7CN9JjcsnOv717Q';
+    const encoded = encodeURIComponent(targetUrl);
+    wx.navigateTo({
+      url: `/pages/webview/webview?url=${encoded}`
     });
   },
 
