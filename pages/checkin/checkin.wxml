@@ -21,6 +21,7 @@
     <view wx:else>
       <text class="status-title">✓ 今日已打卡</text>
       <text class="today-total">今日总时长: {{todayTotalDuration}} 分钟</text>
+      <text class="today-total">今日练习次数: {{todayTotalSessions}} 次</text>
       
       <!-- 今日多条记录 -->
       <view class="today-records">
