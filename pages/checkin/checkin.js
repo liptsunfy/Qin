@@ -15,6 +15,7 @@ Page({
     hasCheckedIn: false,
     todayRecords: [], // 今天的所有记录
     todayTotalDuration: 0,
+    todayTotalSessions: 0,
     continuousDays: 0,
     
     // 打卡表单
@@ -58,6 +59,7 @@ Page({
     const todayRecords = CheckinManager.getRecordsByDateFromRecords(allRecords, today);
     const hasCheckedIn = todayRecords.length > 0;
     const todayTotalDuration = CheckinManager.getTotalDurationByDateFromRecords(allRecords, today);
+    const todayTotalSessions = todayRecords.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
 
     // 计算连续打卡天数
     const continuousDays = StatsManager.getContinuousDaysFromRecords(allRecords);
@@ -110,6 +112,7 @@ Page({
       hasCheckedIn,
       todayRecords,
       todayTotalDuration,
+      todayTotalSessions,
       continuousDays,
       weekDates,
       weekRecords,
@@ -145,6 +148,23 @@ Page({
     this.setData({
       customDuration: value,
       duration: value ? parseInt(value) : 15
+    });
+  },
+
+  // 练习遍数输入
+  onRepeatCountInput(e) {
+    let value = e.detail.value;
+    if (value) {
+      let num = parseInt(value);
+      if (isNaN(num)) num = 1;
+      if (num < 1) num = 1;
+      if (num > 99) num = 99;
+      value = num.toString();
+    }
+
+    this.setData({
+      customRepeatCount: value,
+      repeatCount: value ? parseInt(value) : 1
     });
   },
 
