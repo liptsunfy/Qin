@@ -351,6 +351,12 @@
   padding: 2px 8px;
 }
 
+.selected-date-item-repeat {
+  font-size: 12px;
+  color: #999;
+  margin-left: 6px;
+}
+
 .selected-date-item-notes {
   display: block;
   margin-top: 6px;
