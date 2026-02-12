@@ -78,8 +78,11 @@
     <view wx:if="{{selectedDate}}" class="selected-date-records">
       <view class="selected-date-header">
         <text class="selected-date-title">{{selectedDate}} 练习记录</text>
-        <text class="selected-date-sub">总时长：{{selectedDateTotalDuration}} 分钟</text>
-        <text class="selected-date-sub">练习次数：{{selectedDateSessions}} 次</text>
+        <view class="selected-date-summary">
+          <text class="selected-date-sub">总时长：{{selectedDateTotalDuration}} 分钟</text>
+          <text class="selected-date-sub">练习次数：{{selectedDateSessions}} 次</text>
+          <text class="selected-date-sub">打卡时间：{{selectedDateCheckinTime}}</text>
+        </view>
       </view>
 
       <view wx:if="{{!selectedDateHasRecords}}" class="selected-date-empty">

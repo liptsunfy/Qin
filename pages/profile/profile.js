@@ -101,6 +101,7 @@ Page({
     selectedDateRecords: [],
     selectedDateTotalDuration: 0,
     selectedDateSessions: 0,
+    selectedDateCheckinTime: '--:--',
     selectedDateHasRecords: false,
 
     // canvas：用于图文分享，按设备像素比提升清晰度
@@ -450,6 +451,11 @@ Page({
       }));
     const totalDuration = CheckinManager.getTotalDurationByDate(dateStr);
     const totalSessions = records.reduce((sum, record) => sum + (record.repeatCount || 1), 0);
+    const latestTime = normalizedRecords[0] ? this.formatClockTime(normalizedRecords[0].createTime) : '--:--';
+    const earliestTime = normalizedRecords.length > 0
+      ? this.formatClockTime(normalizedRecords[normalizedRecords.length - 1].createTime)
+      : '--:--';
+    const checkinTime = normalizedRecords.length > 1 ? `${earliestTime} - ${latestTime}` : latestTime;
 
     // 以“页面内展示”为主（避免频繁弹窗），点击日期后在日历下方展示当日记录
     this.setData({
@@ -457,6 +463,7 @@ Page({
       selectedDateRecords: normalizedRecords,
       selectedDateTotalDuration: totalDuration,
       selectedDateSessions: totalSessions,
+      selectedDateCheckinTime: checkinTime,
       selectedDateHasRecords: records.length > 0
     });
   },
@@ -464,6 +471,7 @@ Page({
   formatClockTime(timestamp) {
     if (!timestamp) return '--:--';
     const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return '--:--';
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     return `${hours}:${minutes}`;
