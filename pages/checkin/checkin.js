@@ -168,23 +168,6 @@ Page({
     });
   },
 
-  // 练习遍数输入
-  onRepeatCountInput(e) {
-    let value = e.detail.value;
-    if (value) {
-      let num = parseInt(value);
-      if (isNaN(num)) num = 1;
-      if (num < 1) num = 1;
-      if (num > 99) num = 99;
-      value = num.toString();
-    }
-
-    this.setData({
-      customRepeatCount: value,
-      repeatCount: value ? parseInt(value) : 1
-    });
-  },
-
   // 选择预设曲目
   onSongTap(e) {
     const song = e.currentTarget.dataset.song;

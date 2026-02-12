@@ -17,6 +17,11 @@ Page({
     stats: {
       avgDailyHours: 0,
       totalHours: 0,
+      totalSessions: 0,
+      checkinDays: 0,
+      avgSessionMinutes: 0,
+      avgCheckinMinutes: 0,
+      maxDailyMinutes: 0,
       songCount: 0,
       topSongs: [],
       timeBuckets: [],
@@ -48,6 +53,16 @@ Page({
     const totalHours = round1(totalMinutes / 60);
     const totalDays = DateUtil.getDaysBetween(rangeStart, today) + 1;
     const avgDailyHours = round1(totalDays > 0 ? (totalMinutes / 60) / totalDays : 0);
+    const totalSessions = records.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
+    const checkinDays = new Set(records.map(r => r.date)).size;
+    const avgSessionMinutes = totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0;
+    const avgCheckinMinutes = checkinDays > 0 ? Math.round(totalMinutes / checkinDays) : 0;
+
+    const dailyMinutesMap = {};
+    records.forEach((r) => {
+      dailyMinutesMap[r.date] = (dailyMinutesMap[r.date] || 0) + (r.duration || 0);
+    });
+    const maxDailyMinutes = Math.max(...Object.values(dailyMinutesMap), 0);
 
     const songSet = new Set(records.map(r => (r.song || '未命名曲目')));
     const songCountMap = {};
@@ -72,6 +87,11 @@ Page({
     const stats = {
       avgDailyHours,
       totalHours,
+      totalSessions,
+      checkinDays,
+      avgSessionMinutes,
+      avgCheckinMinutes,
+      maxDailyMinutes,
       songCount: songSet.size,
       topSongs,
       timeBuckets,
@@ -119,9 +139,10 @@ Page({
 
     const dayCount = new Set(filteredRecords.map(record => record.date)).size;
     const totalSessions = filteredRecords.reduce((sum, record) => sum + (record.repeatCount || 1), 0);
+    const totalMinutes = filteredRecords.reduce((sum, record) => sum + (record.duration || 0), 0);
     const filterHint = filteredRecords.length === 0
       ? '当前范围内没有练习记录'
-      : `筛选到 ${totalSessions} 次练习，覆盖 ${dayCount} 天`;
+      : `筛选到 ${totalSessions} 次练习，覆盖 ${dayCount} 天，累计 ${totalMinutes} 分钟`;
 
     return { recordGroups, filterHint };
   },

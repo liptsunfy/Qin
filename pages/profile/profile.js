@@ -439,17 +439,34 @@ Page({
     if (!dateStr) return;
 
     const records = CheckinManager.getRecordsByDate(dateStr);
+    const normalizedRecords = records
+      .slice()
+      .sort((a, b) => (b.createTime || '').localeCompare(a.createTime || ''))
+      .map((record) => ({
+        ...record,
+        durationLabel: `时长：${record.duration || 0} 分钟`,
+        repeatLabel: `遍数：${record.repeatCount || 1} 遍`,
+        checkinTimeLabel: `打卡：${this.formatClockTime(record.createTime)}`
+      }));
     const totalDuration = CheckinManager.getTotalDurationByDate(dateStr);
     const totalSessions = records.reduce((sum, record) => sum + (record.repeatCount || 1), 0);
 
     // 以“页面内展示”为主（避免频繁弹窗），点击日期后在日历下方展示当日记录
     this.setData({
       selectedDate: dateStr,
-      selectedDateRecords: records,
+      selectedDateRecords: normalizedRecords,
       selectedDateTotalDuration: totalDuration,
       selectedDateSessions: totalSessions,
       selectedDateHasRecords: records.length > 0
     });
+  },
+
+  formatClockTime(timestamp) {
+    if (!timestamp) return '--:--';
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   },
 
   // 删除某天的所有记录

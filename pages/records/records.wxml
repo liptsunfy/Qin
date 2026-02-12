@@ -11,12 +11,28 @@
     <text class="section-title">统计</text>
     <view class="stats-grid">
       <view class="stat">
-        <text class="stat-value">{{stats.avgDailyHours}}</text>
-        <text class="stat-label">平均每日(小时)</text>
-      </view>
-      <view class="stat">
         <text class="stat-value">{{stats.totalHours}}</text>
         <text class="stat-label">累计时长(小时)</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.totalSessions}}</text>
+        <text class="stat-label">练习次数</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.checkinDays}}</text>
+        <text class="stat-label">打卡天数</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.avgSessionMinutes}}</text>
+        <text class="stat-label">平均每次(分钟)</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.avgCheckinMinutes}}</text>
+        <text class="stat-label">平均每天(分钟)</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.maxDailyMinutes}}</text>
+        <text class="stat-label">单日最高(分钟)</text>
       </view>
       <view class="stat">
         <text class="stat-value">{{stats.songCount}}</text>
