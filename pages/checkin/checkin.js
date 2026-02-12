@@ -19,7 +19,7 @@ Page({
     continuousDays: 0,
     
     // 打卡表单
-    duration: 30,
+    duration: 15,
     customDuration: '',
     repeatCount: 1,
     customRepeatCount: '',
@@ -36,7 +36,7 @@ Page({
     
     // 预设数据
     presetSongs: ['基本功', '仙翁操', '秋风词', '阳关三叠', '酒狂', '平沙落雁'],
-    presetDurations: [30, 45, 60]
+    presetDurations: [15, 30, 45]
   },
 
   onLoad() {
@@ -118,7 +118,7 @@ Page({
       weekRecords,
       frequentSongs,
       displaySongs,
-      duration: 30,
+      duration: 15,
       customDuration: '',
       repeatCount: 1,
       customRepeatCount: ''
@@ -147,7 +147,24 @@ Page({
     
     this.setData({
       customDuration: value,
-      duration: value ? parseInt(value) : 30
+      duration: value ? parseInt(value) : 15
+    });
+  },
+
+  // 练习遍数输入
+  onRepeatCountInput(e) {
+    let value = e.detail.value;
+    if (value) {
+      let num = parseInt(value);
+      if (isNaN(num)) num = 1;
+      if (num < 1) num = 1;
+      if (num > 99) num = 99;
+      value = num.toString();
+    }
+
+    this.setData({
+      customRepeatCount: value,
+      repeatCount: value ? parseInt(value) : 1
     });
   },
 
@@ -282,8 +299,8 @@ Page({
 
   // 删除今日某条记录
   onDeleteTodayRecord(e) {
-    const index = e.currentTarget.dataset.index;
-    const record = this.data.todayRecords[index];
+    const recordId = e.currentTarget.dataset.id;
+    const record = this.data.todayRecords.find(item => item.id === recordId);
     
     if (!record) return;
     
@@ -292,7 +309,7 @@ Page({
       content: `确定要删除这条练习记录吗？\n${record.song} - ${record.duration}分钟`,
       success: (res) => {
         if (res.confirm) {
-          CheckinManager.deleteRecordById(record.id);
+          CheckinManager.deleteRecordById(recordId);
           wx.showToast({
             title: '删除成功',
             icon: 'success'

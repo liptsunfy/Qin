@@ -41,7 +41,7 @@
             <text wx:if="{{item.notes}}" class="record-notes">{{item.notes}}</text>
           </view>
           <view class="record-actions">
-            <text class="delete-btn" bindtap="onDeleteTodayRecord">删除</text>
+            <text class="delete-btn" bindtap="onDeleteTodayRecord" data-id="{{item.id}}">删除</text>
           </view>
         </view>
       </view>
@@ -57,6 +57,30 @@
   <view class="checkin-form card" id="checkinForm">
     <text class="form-title">{{hasCheckedIn ? '再记一次练习' : '记录今日练习'}}</text>
     
+    <!-- 曲目选择 -->
+    <view class="form-section">
+      <text class="section-title">练习曲目</text>
+      <view class="song-buttons preset">
+        <view 
+          wx:for="{{displaySongs}}" 
+          wx:key="index"
+          class="song-btn {{song == item ? 'active' : ''}}"
+          data-song="{{item}}"
+          bindtap="onSongTap"
+        >
+          {{item}}
+        </view>
+      </view>
+      <view class="custom-song">
+        <input 
+          placeholder="输入曲目名称"
+          value="{{customSong}}"
+          bindinput="onCustomSongInput"
+          class="input"
+        />
+      </view>
+    </view>
+
     <!-- 时长选择 -->
     <view class="form-section">
       <text class="section-title">练习时长 (分钟)</text>
@@ -91,30 +115,6 @@
           placeholder="在此输入遍数（默认1遍）"
           value="{{customRepeatCount}}"
           bindinput="onRepeatCountInput"
-          class="input"
-        />
-      </view>
-    </view>
-
-    <!-- 曲目选择 -->
-    <view class="form-section">
-      <text class="section-title">练习曲目</text>
-      <view class="song-buttons preset">
-        <view 
-          wx:for="{{displaySongs}}" 
-          wx:key="index"
-          class="song-btn {{song == item ? 'active' : ''}}"
-          data-song="{{item}}"
-          bindtap="onSongTap"
-        >
-          {{item}}
-        </view>
-      </view>
-      <view class="custom-song">
-        <input 
-          placeholder="输入曲目名称"
-          value="{{customSong}}"
-          bindinput="onCustomSongInput"
           class="input"
         />
       </view>
