@@ -103,13 +103,16 @@
     <view wx:for="{{recordGroups}}" wx:key="date" class="record-group">
       <text class="record-date">{{item.date}}</text>
       <view wx:for="{{item.items}}" wx:key="id" class="record-item">
-        <view class="record-item-main">
-          <text class="record-time">{{item.timeText}}</text>
+        <view class="record-item-main compact">
           <text class="record-song">{{item.song}}</text>
         </view>
-        <text class="record-duration">{{item.duration}} 分钟</text>
-        <text wx:if="{{item.repeatCount > 1}}" class="record-repeat">×{{item.repeatCount}}</text>
+        <view class="record-meta-row">
+          <text class="record-time">打卡时间 {{item.timeLabel}}</text>
+          <text class="record-duration">{{item.durationLabel}}</text>
+          <text class="record-repeat">{{item.repeatLabel}}</text>
+        </view>
         <text wx:if="{{item.notes}}" class="record-notes">{{item.notes}}</text>
+        <text wx:if="{{item.notesLabel}}" class="record-notes-hint">{{item.notesLabel}}</text>
       </view>
     </view>
   </view>

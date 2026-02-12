@@ -128,13 +128,60 @@ Page({
     const groupMap = {};
     filteredRecords.forEach(record => {
       if (!groupMap[record.date]) {
-        groupMap[record.date] = { date: record.date, items: [] };
+        groupMap[record.date] = {
+          date: record.date,
+          itemMap: {},
+          items: []
+        };
         recordGroups.push(groupMap[record.date]);
       }
-      groupMap[record.date].items.push({
-        ...record,
-        timeText: this.formatRecordTime(record.createTime)
+
+      const songName = (record.song || '未命名曲目').trim() || '未命名曲目';
+      if (!groupMap[record.date].itemMap[songName]) {
+        groupMap[record.date].itemMap[songName] = {
+          id: `${record.date}_${songName}`,
+          song: songName,
+          duration: 0,
+          sessions: 0,
+          notes: '',
+          noteCount: 0,
+          createTimes: []
+        };
+        groupMap[record.date].items.push(groupMap[record.date].itemMap[songName]);
+      }
+
+      const agg = groupMap[record.date].itemMap[songName];
+      agg.duration += (record.duration || 0);
+      agg.sessions += (record.repeatCount || 1);
+      if (record.notes) {
+        agg.noteCount += 1;
+        if (!agg.notes) {
+          agg.notes = record.notes;
+        }
+      }
+      if (record.createTime) {
+        agg.createTimes.push(record.createTime);
+      }
+    });
+
+    recordGroups.forEach(group => {
+      group.items.forEach(item => {
+        const sorted = (item.createTimes || []).slice().sort((a, b) => a.localeCompare(b));
+        const first = sorted[0] ? this.formatRecordTime(sorted[0]) : '--:--';
+        const last = sorted[sorted.length - 1] ? this.formatRecordTime(sorted[sorted.length - 1]) : '--:--';
+        item.timeLabel = sorted.length > 1 ? `${first} - ${last}` : last;
+        item.durationLabel = `时长 ${item.duration} 分钟`;
+        item.repeatLabel = `遍数 ${item.sessions} 遍`;
+        item.notesLabel = item.noteCount > 1 ? `等 ${item.noteCount} 条笔记` : '';
       });
+
+      group.items.sort((a, b) => {
+        const aLast = (a.createTimes || []).slice().sort((x, y) => y.localeCompare(x))[0] || '';
+        const bLast = (b.createTimes || []).slice().sort((x, y) => y.localeCompare(x))[0] || '';
+        return bLast.localeCompare(aLast);
+      });
+
+      delete group.itemMap;
     });
 
     const dayCount = new Set(filteredRecords.map(record => record.date)).size;
