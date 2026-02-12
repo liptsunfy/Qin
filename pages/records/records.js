@@ -17,6 +17,11 @@ Page({
     stats: {
       avgDailyHours: 0,
       totalHours: 0,
+      totalSessions: 0,
+      checkinDays: 0,
+      avgSessionMinutes: 0,
+      avgCheckinMinutes: 0,
+      maxDailyMinutes: 0,
       songCount: 0,
       topSongs: [],
       timeBuckets: [],
@@ -48,12 +53,22 @@ Page({
     const totalHours = round1(totalMinutes / 60);
     const totalDays = DateUtil.getDaysBetween(rangeStart, today) + 1;
     const avgDailyHours = round1(totalDays > 0 ? (totalMinutes / 60) / totalDays : 0);
+    const totalSessions = records.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
+    const checkinDays = new Set(records.map(r => r.date)).size;
+    const avgSessionMinutes = totalSessions > 0 ? Math.round(totalMinutes / totalSessions) : 0;
+    const avgCheckinMinutes = checkinDays > 0 ? Math.round(totalMinutes / checkinDays) : 0;
+
+    const dailyMinutesMap = {};
+    records.forEach((r) => {
+      dailyMinutesMap[r.date] = (dailyMinutesMap[r.date] || 0) + (r.duration || 0);
+    });
+    const maxDailyMinutes = Math.max(...Object.values(dailyMinutesMap), 0);
 
     const songSet = new Set(records.map(r => (r.song || '未命名曲目')));
     const songCountMap = {};
     records.forEach(r => {
       const s = r.song || '未命名曲目';
-      songCountMap[s] = (songCountMap[s] || 0) + 1;
+      songCountMap[s] = (songCountMap[s] || 0) + (r.repeatCount || 1);
     });
 
     const maxSongCount = Math.max(...Object.values(songCountMap), 0);
@@ -72,6 +87,11 @@ Page({
     const stats = {
       avgDailyHours,
       totalHours,
+      totalSessions,
+      checkinDays,
+      avgSessionMinutes,
+      avgCheckinMinutes,
+      maxDailyMinutes,
       songCount: songSet.size,
       topSongs,
       timeBuckets,
@@ -108,19 +128,68 @@ Page({
     const groupMap = {};
     filteredRecords.forEach(record => {
       if (!groupMap[record.date]) {
-        groupMap[record.date] = { date: record.date, items: [] };
+        groupMap[record.date] = {
+          date: record.date,
+          itemMap: {},
+          items: []
+        };
         recordGroups.push(groupMap[record.date]);
       }
-      groupMap[record.date].items.push({
-        ...record,
-        timeText: this.formatRecordTime(record.createTime)
+
+      const songName = (record.song || '未命名曲目').trim() || '未命名曲目';
+      if (!groupMap[record.date].itemMap[songName]) {
+        groupMap[record.date].itemMap[songName] = {
+          id: `${record.date}_${songName}`,
+          song: songName,
+          duration: 0,
+          sessions: 0,
+          notes: '',
+          noteCount: 0,
+          createTimes: []
+        };
+        groupMap[record.date].items.push(groupMap[record.date].itemMap[songName]);
+      }
+
+      const agg = groupMap[record.date].itemMap[songName];
+      agg.duration += (record.duration || 0);
+      agg.sessions += (record.repeatCount || 1);
+      if (record.notes) {
+        agg.noteCount += 1;
+        if (!agg.notes) {
+          agg.notes = record.notes;
+        }
+      }
+      if (record.createTime) {
+        agg.createTimes.push(record.createTime);
+      }
+    });
+
+    recordGroups.forEach(group => {
+      group.items.forEach(item => {
+        const sorted = (item.createTimes || []).slice().sort((a, b) => a.localeCompare(b));
+        const first = sorted[0] ? this.formatRecordTime(sorted[0]) : '--:--';
+        const last = sorted[sorted.length - 1] ? this.formatRecordTime(sorted[sorted.length - 1]) : '--:--';
+        item.timeLabel = sorted.length > 1 ? `${first} - ${last}` : last;
+        item.durationLabel = `时长 ${item.duration} 分钟`;
+        item.repeatLabel = `遍数 ${item.sessions} 遍`;
+        item.notesLabel = item.noteCount > 1 ? `等 ${item.noteCount} 条笔记` : '';
       });
+
+      group.items.sort((a, b) => {
+        const aLast = (a.createTimes || []).slice().sort((x, y) => y.localeCompare(x))[0] || '';
+        const bLast = (b.createTimes || []).slice().sort((x, y) => y.localeCompare(x))[0] || '';
+        return bLast.localeCompare(aLast);
+      });
+
+      delete group.itemMap;
     });
 
     const dayCount = new Set(filteredRecords.map(record => record.date)).size;
+    const totalSessions = filteredRecords.reduce((sum, record) => sum + (record.repeatCount || 1), 0);
+    const totalMinutes = filteredRecords.reduce((sum, record) => sum + (record.duration || 0), 0);
     const filterHint = filteredRecords.length === 0
       ? '当前范围内没有练习记录'
-      : `筛选到 ${filteredRecords.length} 条记录，覆盖 ${dayCount} 天`;
+      : `筛选到 ${totalSessions} 次练习，覆盖 ${dayCount} 天，累计 ${totalMinutes} 分钟`;
 
     return { recordGroups, filterHint };
   },
@@ -200,7 +269,7 @@ Page({
       }
       const bucket = buckets.find(item => normalizedHour >= item.start && normalizedHour < item.end);
       if (bucket) {
-        bucket.count += 1;
+        bucket.count += (record.repeatCount || 1);
       }
     });
 

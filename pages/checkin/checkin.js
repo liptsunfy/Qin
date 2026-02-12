@@ -18,8 +18,10 @@ Page({
     continuousDays: 0,
     
     // 打卡表单
-    duration: 30,
+    duration: 15,
     customDuration: '',
+    repeatCount: 1,
+    customRepeatCount: '',
     song: '',
     customSong: '',
     notes: '',
@@ -33,7 +35,7 @@ Page({
     
     // 预设数据
     presetSongs: ['基本功', '仙翁操', '秋风词', '阳关三叠', '酒狂', '平沙落雁'],
-    presetDurations: [30, 45, 60]
+    presetDurations: [15, 30, 45]
   },
 
   onLoad() {
@@ -65,11 +67,12 @@ Page({
     const weekRecords = weekDates.map(date => {
       const records = CheckinManager.getRecordsByDateFromRecords(allRecords, date);
       const totalDuration = records.reduce((sum, r) => sum + (r.duration || 0), 0);
+      const totalSessions = records.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
       return {
         date,
         hasRecord: records.length > 0,
         duration: totalDuration,
-        recordCount: records.length,
+        recordCount: totalSessions,
         formattedDate: DateUtil.formatDate(date, 'MM-DD'),
         weekday: DateUtil.getWeekday(date)
       };
@@ -81,7 +84,7 @@ Page({
     allRecords.forEach(r => {
       const name = (r.song || '').trim();
       if (!name) return;
-      songCountMap[name] = (songCountMap[name] || 0) + 1;
+      songCountMap[name] = (songCountMap[name] || 0) + (r.repeatCount || 1);
     });
     const frequentSongs = Object.keys(songCountMap)
       .map(name => ({ name, count: songCountMap[name] }))
@@ -112,8 +115,10 @@ Page({
       weekRecords,
       frequentSongs,
       displaySongs,
-      duration: 30,
-      customDuration: ''
+      duration: 15,
+      customDuration: '',
+      repeatCount: 1,
+      customRepeatCount: ''
     });
   },
 
@@ -139,7 +144,24 @@ Page({
     
     this.setData({
       customDuration: value,
-      duration: value ? parseInt(value) : 30
+      duration: value ? parseInt(value) : 15
+    });
+  },
+
+  // 练习遍数输入
+  onRepeatCountInput(e) {
+    let value = e.detail.value;
+    if (value) {
+      let num = parseInt(value);
+      if (isNaN(num)) num = 1;
+      if (num < 1) num = 1;
+      if (num > 99) num = 99;
+      value = num.toString();
+    }
+
+    this.setData({
+      customRepeatCount: value,
+      repeatCount: value ? parseInt(value) : 1
     });
   },
 
@@ -180,7 +202,7 @@ Page({
 
   // 提交打卡
   onCheckinSubmit() {
-    const { duration, song, notes } = this.data;
+    const { duration, song, notes, repeatCount } = this.data;
     
     if (!duration || duration < 1) {
       wx.showToast({
@@ -193,6 +215,7 @@ Page({
     const record = {
       date: DateUtil.getToday(),
       duration: parseInt(duration),
+      repeatCount: Math.max(1, parseInt(repeatCount) || 1),
       song: song || '未命名曲目',
       notes: notes || ''
     };
@@ -224,7 +247,9 @@ Page({
           song: '',
           customSong: '',
           notes: '',
-          selectedSongIndex: -1
+          selectedSongIndex: -1,
+          repeatCount: 1,
+          customRepeatCount: ''
         });
       }, 1000);
     } else {
@@ -254,8 +279,8 @@ Page({
 
   // 删除今日某条记录
   onDeleteTodayRecord(e) {
-    const index = e.currentTarget.dataset.index;
-    const record = this.data.todayRecords[index];
+    const recordId = e.currentTarget.dataset.id;
+    const record = this.data.todayRecords.find(item => item.id === recordId);
     
     if (!record) return;
     
@@ -264,7 +289,7 @@ Page({
       content: `确定要删除这条练习记录吗？\n${record.song} - ${record.duration}分钟`,
       success: (res) => {
         if (res.confirm) {
-          CheckinManager.deleteRecordById(record.id);
+          CheckinManager.deleteRecordById(recordId);
           wx.showToast({
             title: '删除成功',
             icon: 'success'

@@ -11,12 +11,28 @@
     <text class="section-title">统计</text>
     <view class="stats-grid">
       <view class="stat">
-        <text class="stat-value">{{stats.avgDailyHours}}</text>
-        <text class="stat-label">平均每日(小时)</text>
-      </view>
-      <view class="stat">
         <text class="stat-value">{{stats.totalHours}}</text>
         <text class="stat-label">累计时长(小时)</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.totalSessions}}</text>
+        <text class="stat-label">练习次数</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.checkinDays}}</text>
+        <text class="stat-label">打卡天数</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.avgSessionMinutes}}</text>
+        <text class="stat-label">平均每次(分钟)</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.avgCheckinMinutes}}</text>
+        <text class="stat-label">平均每天(分钟)</text>
+      </view>
+      <view class="stat">
+        <text class="stat-value">{{stats.maxDailyMinutes}}</text>
+        <text class="stat-label">单日最高(分钟)</text>
       </view>
       <view class="stat">
         <text class="stat-value">{{stats.songCount}}</text>
@@ -87,12 +103,16 @@
     <view wx:for="{{recordGroups}}" wx:key="date" class="record-group">
       <text class="record-date">{{item.date}}</text>
       <view wx:for="{{item.items}}" wx:key="id" class="record-item">
-        <view class="record-item-main">
-          <text class="record-time">{{item.timeText}}</text>
+        <view class="record-item-main compact">
           <text class="record-song">{{item.song}}</text>
         </view>
-        <text class="record-duration">{{item.duration}} 分钟</text>
+        <view class="record-meta-row">
+          <text class="record-time">打卡时间 {{item.timeLabel}}</text>
+          <text class="record-duration">{{item.durationLabel}}</text>
+          <text class="record-repeat">{{item.repeatLabel}}</text>
+        </view>
         <text wx:if="{{item.notes}}" class="record-notes">{{item.notes}}</text>
+        <text wx:if="{{item.notesLabel}}" class="record-notes-hint">{{item.notesLabel}}</text>
       </view>
     </view>
   </view>
