@@ -28,7 +28,7 @@ function aggregateTopSongs(records, limit=5){
   records.forEach(r=>{
     const name = (r.song || '').trim() || '未命名曲目';
     if(!map[name]) map[name] = { name, count:0, totalMinutes:0 };
-    map[name].count += 1;
+    map[name].count += (r.repeatCount || 1);
     map[name].totalMinutes += (r.duration || 0);
   });
   return Object.values(map)
@@ -93,7 +93,7 @@ Page({
 
     const dateSet = new Set(records.map(r=>r.date));
     const practiceDays = dateSet.size;
-    const totalRecords = records.length;
+    const totalRecords = records.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
     const avgMinutes = daysInRange>0 ? Math.round((totalMinutes/daysInRange)) : 0;
 
     const topSongs = aggregateTopSongs(records, 6);

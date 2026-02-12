@@ -100,6 +100,7 @@ Page({
     selectedDate: '',
     selectedDateRecords: [],
     selectedDateTotalDuration: 0,
+    selectedDateSessions: 0,
     selectedDateHasRecords: false,
 
     // canvas：用于图文分享，按设备像素比提升清晰度
@@ -254,10 +255,16 @@ Page({
     const songData = this.data.songStats.find(song => song.name === songName);
     
     if (!songData) return;
+
+    const practiceCount = songData.count || 0;
+    const totalDuration = songData.totalDuration || 0;
+    const totalHours = songData.totalHours || 0;
+    const recordDates = (songData.records || []).map(record => record.date);
+    const checkinCount = new Set(recordDates).size;
     
     wx.showModal({
       title: `${songName} - 练习详情`,
-      content: `练习次数: ${songData.count}次\n总时长: ${songData.totalHours}小时\n平均时长: ${songData.avgDuration}分钟/次\n首次练习: ${songData.firstDate}\n最近练习: ${songData.lastDate}`,
+      content: `练习次数: ${practiceCount}次\n练习总时长: ${totalDuration}分钟（${totalHours}小时）\n打卡次数: ${checkinCount}天\n平均时长: ${songData.avgDuration}分钟/次\n首次练习: ${songData.firstDate}\n最近练习: ${songData.lastDate}`,
       showCancel: false,
       confirmText: '查看记录',
       success: (res) => {
@@ -297,7 +304,7 @@ Page({
   deleteSongRecords(songName) {
     wx.showModal({
       title: '确认删除',
-      content: `确定要删除曲目"${songName}"的所有${this.data.songStats.find(s => s.name === songName)?.count || 0}条记录吗？此操作不可恢复。`,
+      content: `确定要删除曲目"${songName}"的所有${this.data.songStats.find(s => s.name === songName)?.count || 0}次练习吗？此操作不可恢复。`,
       confirmColor: '#ff4444',
       success: (res) => {
         if (res.confirm) {
@@ -342,7 +349,7 @@ Page({
           records: []
         };
       }
-      monthRecords[record.date].count += 1;
+      monthRecords[record.date].count += (record.repeatCount || 1);
       monthRecords[record.date].totalDuration += (record.duration || 0);
       monthRecords[record.date].records.push(record);
     });
@@ -432,15 +439,34 @@ Page({
     if (!dateStr) return;
 
     const records = CheckinManager.getRecordsByDate(dateStr);
+    const normalizedRecords = records
+      .slice()
+      .sort((a, b) => (b.createTime || '').localeCompare(a.createTime || ''))
+      .map((record) => ({
+        ...record,
+        durationLabel: `时长：${record.duration || 0} 分钟`,
+        repeatLabel: `遍数：${record.repeatCount || 1} 遍`,
+        checkinTimeLabel: `打卡：${this.formatClockTime(record.createTime)}`
+      }));
     const totalDuration = CheckinManager.getTotalDurationByDate(dateStr);
+    const totalSessions = records.reduce((sum, record) => sum + (record.repeatCount || 1), 0);
 
     // 以“页面内展示”为主（避免频繁弹窗），点击日期后在日历下方展示当日记录
     this.setData({
       selectedDate: dateStr,
-      selectedDateRecords: records,
+      selectedDateRecords: normalizedRecords,
       selectedDateTotalDuration: totalDuration,
+      selectedDateSessions: totalSessions,
       selectedDateHasRecords: records.length > 0
     });
+  },
+
+  formatClockTime(timestamp) {
+    if (!timestamp) return '--:--';
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   },
 
   // 删除某天的所有记录
@@ -651,7 +677,7 @@ Page({
     // 当日数据
     const dayRecords = CheckinManager.getRecordsByDate(shareDate) || [];
     const dayTotalMinutes = dayRecords.reduce((s, r) => s + (r.duration || 0), 0);
-    const daySessions = dayRecords.length;
+    const daySessions = dayRecords.reduce((sum, r) => sum + (r.repeatCount || 1), 0);
 
     // 近 7 天（含当日）
     const weekStart = DateUtil.addDays(shareDate, -6);
@@ -663,7 +689,8 @@ Page({
       const d = DateUtil.addDays(weekStart, i);
       const rec = CheckinManager.getRecordsByDate(d) || [];
       const m = rec.reduce((s, r) => s + (r.duration || 0), 0);
-      weekDailyMinutes.push({ date: d, minutes: m, sessions: rec.length });
+      const sessions = rec.reduce((s, r) => s + (r.repeatCount || 1), 0);
+      weekDailyMinutes.push({ date: d, minutes: m, sessions });
     }
     const weekSessions = weekDailyMinutes.reduce((s, it) => s + (it.sessions || 0), 0);
     const weekAvgDailyMinutes = Math.round((weekStats.totalDuration / 7) * 10) / 10;
@@ -697,9 +724,10 @@ Page({
         .forEach(r => {
           const t = (r.createTime || '').slice(11, 16) || '--:--';
           const song = r.song || '未命名曲目';
-          content += `${t} · ${r.duration || 0} 分钟 · ${song}\n`;
+          const repeatText = (r.repeatCount || 1) > 1 ? ` ×${r.repeatCount}` : '';
+          content += `${t} · ${r.duration || 0} 分钟${repeatText} · ${song}\n`;
         });
-      if (dayRecords.length > 5) content += `…共 ${dayRecords.length} 条\n`;
+      if (dayRecords.length > 5) content += `…共 ${daySessions} 次\n`;
     } else {
       content += `\n当日暂无练习记录。\n`;
     }
@@ -950,7 +978,7 @@ Page({
       const key = (r.song || '').trim() || '未命名曲目';
       const prev = songMap.get(key) || { song: key, minutes: 0, sessions: 0, lastTime: '' };
       prev.minutes += Number(r.duration || 0);
-      prev.sessions += 1;
+      prev.sessions += (r.repeatCount || 1);
       const ct = r.createTime || '';
       if (ct && (!prev.lastTime || ct > prev.lastTime)) prev.lastTime = ct;
       songMap.set(key, prev);
@@ -999,12 +1027,12 @@ Page({
         y += 26;
       });
 
-      const total = (shareStats.dayRecords || []).length;
+      const total = (shareStats.dayRecords || []).reduce((sum, r) => sum + (r.repeatCount || 1), 0);
       const uniqueSongs = songMap.size;
       if (uniqueSongs > rows.length) {
         ctx.setFillStyle(sub);
         ctx.setFontSize(13);
-        ctx.fillText(`…共 ${uniqueSongs} 首曲目 / ${total} 次记录`, pad + 16, listTop + listH - 24);
+        ctx.fillText(`…共 ${uniqueSongs} 首曲目 / ${total} 次练习`, pad + 16, listTop + listH - 24);
       }
     }
 
@@ -1215,7 +1243,7 @@ Page({
       { icon: '📅', label: '练习天数', value: `${stats.days}天` },
       { icon: '⏱️', label: '总时长', value: `${stats.totalHours}小时` },
       { icon: '📈', label: '平均时长', value: `${stats.avgDuration}分钟` },
-      { icon: '🎵', label: '记录条数', value: `${stats.totalRecords}条` }
+      { icon: '🎵', label: '练习次数', value: `${stats.totalRecords}次` }
     ];
     
     const startX = x + 20;
@@ -1430,6 +1458,15 @@ Page({
   closeDonateModal() {
     this.setData({
       showDonateModal: false
+    });
+  },
+
+  // 关注公众号文章
+  onOpenOfficialArticle() {
+    const targetUrl = 'https://mp.weixin.qq.com/s/li3f_Nb7CN9JjcsnOv717Q';
+    const encoded = encodeURIComponent(targetUrl);
+    wx.navigateTo({
+      url: `/pages/webview/webview?url=${encoded}`
     });
   },
 
