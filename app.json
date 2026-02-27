@@ -1,0 +1,55 @@
+{
+  "pages": [
+    "pages/tools/tools",
+    "pages/tools/tuner/tuner",
+    "pages/tools/metronome/metronome",
+    "pages/tools/recorder/recorder",
+    "pages/tools/recorder-detail/recorder-detail",
+    "pages/tools/notation/notation",
+    "pages/tools/knowledge/knowledge",
+    "pages/tools/calculator/calculator",
+    "pages/tools/ywt/ywt",
+    "pages/checkin/checkin",
+    "pages/profile/profile",
+    "pages/review/review",
+    "pages/records/records",
+    "pages/webview/webview"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "琴记",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f8f8f8"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#333333",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/tools/tools",
+        "text": "工具",
+        "iconPath": "images/tools.png",
+        "selectedIconPath": "images/tools_active.png"
+      },
+      {
+        "pagePath": "pages/checkin/checkin",
+        "text": "打卡",
+        "iconPath": "images/checkin.png",
+        "selectedIconPath": "images/checkin_active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/profile.png",
+        "selectedIconPath": "images/profile_active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "__usePrivacyCheck__": true
+}

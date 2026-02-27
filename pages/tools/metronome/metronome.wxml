@@ -1,0 +1,66 @@
+<view class="page">
+  <view class="header">
+    <text class="title">节拍器</text>
+  </view>
+
+  <view class="card bpm-card">
+    <view class="bpm-display">
+      <text class="bpm-value">{{bpm}}</text>
+      <text class="bpm-unit">BPM</text>
+    </view>
+    <slider
+      min="20"
+      max="300"
+      step="1"
+      value="{{sliderBpm}}"
+      activeColor="#5c6cff"
+      backgroundColor="#e9ecff"
+      bindchange="onBpmChange"
+    />
+    <view class="bpm-controls">
+      <button class="bpm-btn" data-step="-10" bindtap="onBpmAdjust">«</button>
+      <button class="bpm-btn" data-step="-1" bindtap="onBpmAdjust">‹</button>
+      <button class="bpm-btn" data-step="1" bindtap="onBpmAdjust">›</button>
+      <button class="bpm-btn" data-step="10" bindtap="onBpmAdjust">»</button>
+    </view>
+    <view class="bpm-range">
+      <text>{{20}}</text>
+      <text>{{300}}</text>
+    </view>
+  </view>
+
+  <view class="card beat-card">
+    <view class="section-title">节拍类型</view>
+    <view class="beat-options">
+      <view
+        wx:for="{{beatOptions}}"
+        wx:key="value"
+        class="beat-option {{item.value === beatMode || item.value === beatsPerBar ? 'active' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onBeatOptionTap"
+      >
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+    <view class="beat-indicator" wx:if="{{beatMode !== 'free'}}">
+      <view
+        wx:for="{{beatsPerBar}}"
+        wx:key="index"
+        class="beat-dot {{currentBeat === (index + 1) ? 'active' : ''}}"
+      ></view>
+    </view>
+  </view>
+
+  <view class="card action-card">
+    <button
+      class="primary-btn {{isRunning ? 'stop' : 'start'}}"
+      bindtap="toggleMetronome"
+    >
+      {{isRunning ? '停止' : '开始'}}
+    </button>
+    <view class="tap-area" bindtap="onTapTempo">
+      <text class="tap-title">Tap Tempo</text>
+      <text class="tap-subtitle">{{tapHint}}</text>
+    </view>
+  </view>
+</view>

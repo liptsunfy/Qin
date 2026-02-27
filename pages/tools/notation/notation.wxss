@@ -1,0 +1,301 @@
+/* pages/tools/notation/notation.wxss */
+
+.page {
+  padding: 16px;
+  padding-bottom: 28px;
+  box-sizing: border-box;
+}
+
+.header {
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  color: rgba(0,0,0,0.55);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.04);
+}
+
+.search-input {
+  flex: 1;
+  font-size: 14px;
+}
+
+.search-actions {
+  display: flex;
+  align-items: center;
+}
+
+.btn-ghost {
+  padding: 0 10px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.cats {
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.cats-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.04);
+  font-size: 12px;
+  color: rgba(0,0,0,0.75);
+}
+
+.cat.active {
+  background: rgba(0,0,0,0.10);
+  font-weight: 600;
+}
+
+.quick {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
+.quick-label {
+  font-size: 12px;
+  color: rgba(0,0,0,0.55);
+  margin-top: 6px;
+  width: 44px;
+}
+
+.quick-chips {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.04);
+  font-size: 12px;
+}
+
+.meta {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.meta-text {
+  font-size: 12px;
+  color: rgba(0,0,0,0.45);
+}
+
+.list {
+  margin-top: 10px;
+}
+
+.item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  margin-bottom: 10px;
+}
+
+.item-left {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.symbol-img {
+  width: 38px;
+  height: 38px;
+}
+
+.item-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.row1 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.05);
+  color: rgba(0,0,0,0.6);
+  flex-shrink: 0;
+}
+
+.desc {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(0,0,0,0.65);
+  line-height: 18px;
+}
+
+.empty {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.03);
+}
+
+.empty-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.empty-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.55);
+}
+
+/* 详情弹层 */
+.overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: flex-end;
+  z-index: 999;
+}
+
+.sheet {
+  width: 100%;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  background: #fff;
+  padding: 14px 16px 16px;
+  box-sizing: border-box;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sheet-symbol-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.04);
+}
+
+.sheet-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.sheet-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.06);
+  color: rgba(0,0,0,0.6);
+}
+
+.sheet-body {
+  margin-top: 12px;
+}
+
+.block {
+  margin-top: 12px;
+}
+
+.block-title {
+  font-size: 12px;
+  color: rgba(0,0,0,0.5);
+  margin-bottom: 6px;
+}
+
+.block-text {
+  font-size: 14px;
+  line-height: 20px;
+  color: rgba(0,0,0,0.78);
+}
+
+.kw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kw-chip {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.04);
+}
+
+.sheet-footer {
+  margin-top: 16px;
+}
+
+.btn {
+  width: 100%;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.08);
+  font-weight: 600;
+}
+
+/* 小屏适配 */
+@media (max-width: 360px) {
+  .page { padding: 14px; }
+  .title { font-size: 19px; }
+  .item { padding: 11px; }
+}

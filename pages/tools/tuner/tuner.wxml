@@ -1,0 +1,119 @@
+<view class="tuner-page">
+  <view class="card hero">
+    <text class="hero-title">琴调音器</text>
+  </view>
+
+  <view class="card settings-card">
+    <view class="setting-row">
+      <text class="setting-label">曲调</text>
+      <picker
+        class="setting-value picker"
+        mode="selector"
+        range="{{tuningPresetNames}}"
+        value="{{currentPresetIndex}}"
+        bindchange="onPresetChange"
+      >
+        <view class="picker-content">
+          <text>{{tuningPresetNames[currentPresetIndex]}}</text>
+          <text class="setting-desc">{{tuningPresets[currentPresetIndex] ? tuningPresets[currentPresetIndex].description : ''}}</text>
+        </view>
+      </picker>
+    </view>
+    <view class="setting-row compact">
+      <text class="setting-label">基准音 A4</text>
+      <view class="setting-input">
+        <view class="a4-stepper">
+          <view class="step-btn" data-step="-1" bindtap="adjustA4">-</view>
+          <input
+            class="a4-input"
+            type="number"
+            value="{{a4}}"
+            maxlength="3"
+            bindinput="onA4Input"
+          />
+          <view class="step-btn" data-step="1" bindtap="adjustA4">+</view>
+        </view>
+        <text class="setting-value-text">Hz</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card status-card" wx:if="{{strings.length}}">
+    <view class="status-header">
+      <view class="status-main">
+        <text class="status-string">{{currentString ? currentString.name : ''}}</text>
+        <text class="status-note">{{currentString ? currentString.note : ''}}{{currentString ? currentString.octave : ''}}</text>
+      </view>
+      <view class="status-actions">
+        <switch checked="{{autoTune}}" bindchange="onAutoTuneToggle" />
+        <text class="status-toggle">自动换弦</text>
+      </view>
+    </view>
+    <view class="status-meta">
+      <text>目标 {{currentString ? currentString.frequency.toFixed(1) : '--'}} Hz</text>
+      <text wx:if="{{currentFrequency > 0}}">当前 {{currentFrequency}} Hz</text>
+    </view>
+    <view class="status-meta">
+      <text>偏差 {{cents}} cents</text>
+      <text>音量 {{volume}}</text>
+      <text>稳定度 {{stability}}%</text>
+    </view>
+    <view class="dial">
+      <view class="dial-arc">
+        <view class="dial-tick left"></view>
+        <view class="dial-tick center"></view>
+        <view class="dial-tick right"></view>
+        <view class="dial-needle" style="transform: rotate({{needleDeg}}deg);"></view>
+        <view class="dial-value">{{cents}}c</view>
+      </view>
+      <view class="dial-labels">
+        <text>偏低</text>
+        <text>标准</text>
+        <text>偏高</text>
+      </view>
+      <view class="dial-scale-text">
+        <text>-50</text>
+        <text>0</text>
+        <text>+50</text>
+      </view>
+    </view>
+    <view class="status-pill {{statusLevel}}">
+      <text>{{statusText}}</text>
+    </view>
+    <view class="status-buttons">
+      <button class="primary" bindtap="onToggleListen">{{isListening ? '停止监听' : '开始监听'}}</button>
+      <button class="ghost" bindtap="toggleReferenceTone">{{isTonePlaying ? '停止参考音' : '播放参考音'}}</button>
+      <button class="ghost" bindtap="onMarkTuned">标记已调准</button>
+    </view>
+  </view>
+
+  <view class="card compact-card">
+    <view class="section-header">
+      <text class="section-title">弦位列表</text>
+      <text class="section-action" bindtap="onResetTuned">重置</text>
+    </view>
+    <view class="string-grid">
+      <view wx:for="{{strings}}" wx:key="id" class="string-item {{index === currentStringIndex ? 'active' : ''}}" bindtap="onStringTap" data-index="{{index}}">
+        <text class="string-name">{{item.name}}</text>
+        <text class="string-note">{{item.note}}{{item.octave}}</text>
+        <text class="string-jianpu">{{item.jianpu}}</text>
+        <text class="string-status {{item.tuned ? 'tuned' : ''}}">{{item.tuned ? '已调准' : '待调音'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card compact-card" wx:if="{{pitchReferenceList.length}}">
+    <view class="section-header">
+      <text class="section-title">五度相生律音名表（含升降）</text>
+    </view>
+    <view class="string-grid">
+      <view wx:for="{{pitchReferenceList}}" wx:key="name" class="string-item">
+        <text class="string-name">{{item.name}}</text>
+        <text class="string-note">{{item.note}}</text>
+        <text class="string-jianpu">k={{item.fifthSteps}}</text>
+        <text class="string-status tuned">{{item.frequency}}Hz</text>
+      </view>
+    </view>
+  </view>
+
+</view>

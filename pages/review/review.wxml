@@ -1,0 +1,41 @@
+<view class="container">
+  <view class="tabs">
+    <view class="tab {{mode==='week'?'active':''}}" bindtap="switchToWeek">周回顾</view>
+    <view class="tab {{mode==='month'?'active':''}}" bindtap="switchToMonth">月回顾</view>
+  </view>
+
+  <view class="card">
+    <view class="title-row">
+      <text class="title">{{titleText}}</text>
+      <text class="sub">{{rangeText}}</text>
+    </view>
+
+    <view class="kpis">
+      <view class="kpi">
+        <text class="label">累计时长</text>
+        <text class="value">{{totalHours}}h</text>
+      </view>
+      <view class="kpi">
+        <text class="label">练习天数</text>
+        <text class="value">{{practiceDays}}天</text>
+      </view>
+      <view class="kpi">
+        <text class="label">打卡次数</text>
+        <text class="value">{{totalRecords}}次</text>
+      </view>
+      <view class="kpi">
+        <text class="label">日均时长</text>
+        <text class="value">{{avgMinutes}}m</text>
+      </view>
+    </view>
+
+    <view class="section-title">常练曲目</view>
+    <view wx:if="{{topSongs && topSongs.length}}">
+      <view wx:for="{{topSongs}}" wx:key="name" class="song-item">
+        <text class="song-name">{{item.name}}</text>
+        <text class="song-meta">{{item.totalMinutes}}m · {{item.count}}次</text>
+      </view>
+    </view>
+    <view wx:else class="empty">这段时间还没有练习记录。</view>
+  </view>
+</view>

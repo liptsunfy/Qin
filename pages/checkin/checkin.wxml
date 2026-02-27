@@ -1,0 +1,162 @@
+<view class="container">
+  <!-- 顶部状态栏 -->
+  <view class="status-bar card">
+    <view class="date-section">
+      <text class="date-text">{{today}} 周{{weekday}}</text>
+      <view class="continuous-days">
+        <text>连续打卡 {{continuousDays}} 天</text>
+      </view>
+    </view>
+    <view class="encourage-section">
+      <text class="encourage-text">{{encouragePhrase}}</text>
+    </view>
+  </view>
+
+  <!-- 今日练习状态 -->
+  <view class="today-status card">
+    <view wx:if="{{!hasCheckedIn}}">
+      <text class="status-title">今日尚未练习</text>
+      <text class="status-hint">选择时长和曲目开始打卡</text>
+    </view>
+    <view wx:else>
+      <text class="status-title">✓ 今日已打卡</text>
+      <text class="today-total">今日总时长: {{todayTotalDuration}} 分钟</text>
+      <text class="today-total">今日练习次数: {{todayTotalSessions}} 次</text>
+      
+      <!-- 今日多条记录 -->
+      <view class="today-records">
+        <view 
+          wx:for="{{todayRecords}}" 
+          wx:key="index"
+          class="today-record-item"
+          data-index="{{index}}"
+        >
+          <view class="record-info">
+            <text class="record-time">{{formatRecordTime(item.createTime)}}</text>
+            <view class="record-song-row">
+              <text class="record-song-name">{{item.song}}</text>
+              <text class="record-song-duration">{{item.duration}} 分钟</text>
+              <text wx:if="{{item.repeatCount > 1}}" class="record-repeat-count">×{{item.repeatCount}}</text>
+            </view>
+            <text wx:if="{{item.notes}}" class="record-notes">{{item.notes}}</text>
+          </view>
+          <view class="record-actions">
+            <text class="delete-btn" bindtap="onDeleteTodayRecord" data-id="{{item.id}}">删除</text>
+          </view>
+        </view>
+      </view>
+      
+      <view class="add-more-section">
+        <text class="add-more-text">还想继续练习？</text>
+        <button class="btn btn-small" bindtap="scrollToForm">再记一次</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 打卡表单 -->
+  <view class="checkin-form card" id="checkinForm">
+    <text class="form-title">{{hasCheckedIn ? '再记一次练习' : '记录今日练习'}}</text>
+    
+    <!-- 曲目选择 -->
+    <view class="form-section">
+      <text class="section-title">练习曲目</text>
+      <view class="song-buttons preset">
+        <view 
+          wx:for="{{displaySongs}}" 
+          wx:key="index"
+          class="song-btn {{song == item ? 'active' : ''}}"
+          data-song="{{item}}"
+          bindtap="onSongTap"
+        >
+          {{item}}
+        </view>
+      </view>
+      <view class="custom-song">
+        <input 
+          placeholder="输入曲目名称"
+          value="{{customSong}}"
+          bindinput="onCustomSongInput"
+          class="input"
+        />
+      </view>
+    </view>
+
+    <!-- 时长选择 -->
+    <view class="form-section">
+      <text class="section-title">练习时长 (分钟)</text>
+      <view class="duration-buttons">
+        <view 
+          wx:for="{{presetDurations}}" 
+          wx:key="index"
+          class="duration-btn {{duration == item ? 'active' : ''}}"
+          bindtap="onDurationTap"
+          data-duration="{{item}}"
+        >
+          {{item}}
+        </view>
+      </view>
+      <view class="custom-duration">
+        <input 
+          type="number" 
+          placeholder="在此输入时长（分钟）"
+          value="{{customDuration}}"
+          bindinput="onCustomDurationInput"
+          class="input"
+        />
+      </view>
+    </view>
+
+    <!-- 练习遍数 -->
+    <view class="form-section">
+      <text class="section-title">练习遍数</text>
+      <view class="custom-duration">
+        <input 
+          type="number"
+          placeholder="在此输入遍数（默认1遍）"
+          value="{{customRepeatCount}}"
+          bindinput="onRepeatCountInput"
+          class="input"
+        />
+      </view>
+    </view>
+
+    <!-- 练习笔记 -->
+    <view class="form-section">
+      <text class="section-title">练习笔记</text>
+      <textarea 
+        placeholder="记录一下今日练习心得吧..."
+        value="{{notes}}"
+        bindinput="onNotesInput"
+        maxlength="200"
+        class="notes-input"
+      />
+      <view class="notes-counter">
+        <text>{{notes.length}}/200</text>
+      </view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <button class="btn btn-primary" bindtap="onCheckinSubmit">
+      {{hasCheckedIn ? '再记一次' : '完成打卡'}} ({{duration}}分钟)
+    </button>
+  </view>
+
+  <!-- 本周日历 -->
+  <view class="week-calendar card">
+    <text class="section-title">本周打卡记录</text>
+    <view class="week-days">
+      <view 
+        wx:for="{{weekRecords}}" 
+        wx:key="index"
+        class="day-cell {{item.date == today ? 'today' : ''}}"
+      >
+        <text class="day-date">{{item.formattedDate}}</text>
+        <text class="day-weekday">周{{item.weekday}}</text>
+        <view wx:if="{{item.hasRecord}}" class="day-dot"></view>
+        <view wx:if="{{item.recordCount > 1}}" class="day-multiple">×{{item.recordCount}}</view>
+        <text wx:if="{{item.hasRecord}}" class="day-duration">{{item.duration}}′</text>
+        <text wx:else class="day-empty">-</text>
+      </view>
+    </view>
+  </view>
+</view>

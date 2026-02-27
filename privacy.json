@@ -1,0 +1,20 @@
+{
+  "privacy": {
+    "prompt": "custom",
+    "template": {
+      "title": "用户隐私保护提示",
+      "content": "请阅读并同意《用户隐私保护指引》以继续使用小程序",
+      "buttonText": "我知道了"
+    },
+    "infos": [
+      {
+        "name": "record",
+        "desc": "用于录音器与调音器功能采集麦克风音频信号以识别音高与保存录音"
+      },
+      {
+        "name": "getLocation",
+        "desc": "用于获取位置信息以提供相关功能"
+      }
+    ]
+  }
+}

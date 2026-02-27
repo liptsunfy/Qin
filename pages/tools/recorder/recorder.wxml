@@ -1,0 +1,50 @@
+<view class="page">
+  <view class="header">
+    <text class="title">练习录音</text>
+  </view>
+
+  <view class="card mode-card">
+    <view class="mode-header">
+      <text class="mode-title">古琴录音模式</text>
+      <text class="mode-tag">高清保真</text>
+    </view>
+    <view class="mode-desc">
+      <text>48kHz / 256kbps，双声道捕捉泛音与尾音细节。</text>
+    </view>
+    <view class="mode-tips">
+      <view class="tip-item">• 录音后可重命名、分享或保存</view>
+    </view>
+  </view>
+
+  <view class="card record-card">
+    <view class="timer">{{durationText}}</view>
+    <view class="status">
+      <text wx:if="{{!isRecording}}">准备就绪</text>
+      <text wx:elif="{{isPaused}}">已暂停</text>
+      <text wx:else>录音中...</text>
+    </view>
+
+    <view class="actions">
+      <button class="secondary-btn" bindtap="startRecording" wx:if="{{!isRecording}}">开始录音</button>
+      <button class="secondary-btn pause" bindtap="pauseRecording" wx:if="{{isRecording && !isPaused}}">暂停</button>
+      <button class="secondary-btn" bindtap="resumeRecording" wx:if="{{isRecording && isPaused}}">继续</button>
+      <button class="primary-btn" bindtap="stopRecording" wx:if="{{isRecording}}">保存</button>
+    </view>
+  </view>
+
+  <view class="card list-card">
+    <view class="section-title">
+      我的录音
+      <text class="section-hint">点击进入详情</text>
+    </view>
+    <view wx:if="{{recordings.length === 0}}" class="empty">还没有录音，快来记录第一段声音吧～</view>
+
+    <view wx:for="{{recordings}}" wx:key="id" class="record-item" data-id="{{item.id}}" bindtap="openRecordingDetail">
+      <view class="record-info">
+        <text class="record-name">{{item.name}}</text>
+        <text class="record-meta">{{item.durationText}}</text>
+      </view>
+      <view class="record-arrow">›</view>
+    </view>
+  </view>
+</view>

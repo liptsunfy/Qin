@@ -1,0 +1,23 @@
+.knowledge-page{padding:16rpx;background:#f8f8f8;min-height:100vh;box-sizing:border-box}
+.card{background:#fff;border-radius:24rpx;padding:24rpx;margin-bottom:16rpx;box-shadow:0 8rpx 24rpx rgba(0,0,0,0.04)}
+.hero-title{font-size:36rpx;font-weight:600;color:#222}
+.hero-subtitle{margin-top:10rpx;font-size:24rpx;color:#666;line-height:1.6}
+.section-title{font-size:30rpx;font-weight:600;color:#222;margin-bottom:16rpx}
+.knowledge-list{display:flex;flex-direction:column;gap:12rpx}
+.knowledge-item{padding:16rpx;border-radius:18rpx;background:#fafafa;display:flex;align-items:center;justify-content:space-between;gap:12rpx;border:1rpx solid transparent}
+.knowledge-item.active{background:#fff;border-color:#111;box-shadow:0 6rpx 16rpx rgba(0,0,0,0.06)}
+.knowledge-item-main{display:flex;flex-direction:column;gap:6rpx;flex:1}
+.knowledge-title{font-size:26rpx;color:#222;font-weight:600}
+.knowledge-description{font-size:22rpx;color:#777;line-height:1.5}
+.knowledge-tag{font-size:20rpx;color:#fff;background:#111;border-radius:999rpx;padding:6rpx 14rpx}
+.detail-header{margin-bottom:18rpx}
+.detail-title{font-size:30rpx;font-weight:600;color:#222}
+.detail-desc{margin-top:8rpx;font-size:22rpx;color:#666;line-height:1.6}
+.detail-section{margin-top:16rpx}
+.detail-section-title{font-size:24rpx;color:#333;font-weight:600;margin-bottom:10rpx}
+.detail-list{display:flex;flex-direction:column;gap:8rpx}
+.detail-item{display:flex;gap:10rpx;align-items:flex-start}
+.detail-dot{font-size:22rpx;color:#b18a5a;margin-top:2rpx}
+.detail-text{font-size:22rpx;color:#555;line-height:1.6;flex:1}
+.detail-tip{margin-top:18rpx;padding:16rpx;border-radius:18rpx;background:#f9f6f2}
+.detail-tip-title{font-size:24rpx;color:#b18a5a;font-weight:600;margin-bottom:10rpx}

@@ -1,0 +1,78 @@
+<view class="tuner-container">
+  <!-- 头部 -->
+  <view class="tuner-header">
+    <view class="header-left">
+      <text class="back-btn" bindtap="onClose">‹</text>
+    </view>
+    <view class="header-center">
+      <text class="tuner-title">古琴调音器</text>
+    </view>
+    <view class="header-right"></view>
+  </view>
+
+  <!-- 琴弦选择 -->
+  <view class="string-selector">
+    <view class="selector-title">选择琴弦</view>
+    <view class="strings-grid">
+      <view 
+        wx:for="{{strings}}" 
+        wx:key="index"
+        class="string-item {{selectedString === index ? 'active' : ''}}"
+        bindtap="selectString"
+        data-index="{{index}}"
+      >
+        <text class="string-name">{{item.name}}</text>
+        <text class="string-note">{{item.note}}</text>
+        <text class="string-freq">{{item.frequency}}Hz</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 调音显示 -->
+  <view class="tuning-display">
+    <view class="frequency-display">
+      <text class="current-note">{{currentNote || '--'}}</text>
+      <text class="current-freq">{{frequency.toFixed(1)}} Hz</text>
+    </view>
+    
+    <view class="deviation-indicator">
+      <view class="indicator-background">
+        <view class="indicator-line"></view>
+        <view class="indicator-needle" style="transform: translateX({{deviation * 2}}px);">
+          <view class="needle-head"></view>
+        </view>
+        <view class="indicator-labels">
+          <text>-50</text>
+          <text>-25</text>
+          <text>准</text>
+          <text>+25</text>
+          <text>+50</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="deviation-text">
+      <text wx:if="{{deviation > 0}}" class="deviation-high">偏高 {{deviation.toFixed(1)}} Hz</text>
+      <text wx:elif="{{deviation < 0}}" class="deviation-low">偏低 {{Math.abs(deviation).toFixed(1)}} Hz</text>
+      <text wx:else class="deviation-perfect">✓ 音准正确</text>
+    </view>
+  </view>
+
+  <!-- 控制按钮 -->
+  <view class="tuner-controls">
+    <button 
+      class="control-btn {{isListening ? 'stop' : 'start'}}" 
+      bindtap="{{isListening ? 'stopTuning' : 'startTuning'}}"
+    >
+      {{isListening ? '停止调音' : '开始调音'}}
+    </button>
+  </view>
+
+  <!-- 使用提示 -->
+  <view class="tuner-tips">
+    <text class="tips-title">使用提示：</text>
+    <text>1. 将手机靠近古琴</text>
+    <text>2. 弹奏选择的琴弦</text>
+    <text>3. 观察指针调整琴弦松紧</text>
+  </view>
+</view>

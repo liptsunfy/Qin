@@ -1,0 +1,19 @@
+<view class="ywt-page">
+  <view class="ywt-header card">
+    <view class="header-row">
+      <button class="mode-btn" bindtap="onToggleMode">{{modes[currentModeIndex].label}}</button>
+      <picker class="tuning-picker" mode="selector" range="{{tunings}}" value="{{currentTuningIndex}}" bindchange="onTuningChange">
+        <view class="tuning-btn">{{tunings[currentTuningIndex]}}</view>
+      </picker>
+    </view>
+    <text class="header-hint">当前展示：{{modes[currentModeIndex].label}} · {{tunings[currentTuningIndex]}}</text>
+  </view>
+
+  <view class="ywt-content card">
+    <view class="ywt-placeholder">
+      <text class="placeholder-title">{{modes[currentModeIndex].label}}</text>
+      <text class="placeholder-subtitle">{{tunings[currentTuningIndex]}}</text>
+      <text class="placeholder-note">占位图待补充，当前为横版全屏展示区。</text>
+    </view>
+  </view>
+</view>

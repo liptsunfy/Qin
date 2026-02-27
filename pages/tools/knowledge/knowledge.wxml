@@ -1,0 +1,44 @@
+<view class="knowledge-page">
+  <view class="hero card">
+    <text class="hero-title">琴知识</text>
+    <text class="hero-subtitle">体系化梳理基础、技巧与曲目，随时查阅练习要点</text>
+  </view>
+
+  <view class="card">
+    <text class="section-title">知识导航</text>
+    <view class="knowledge-list">
+      <view wx:for="{{knowledgeList}}" wx:key="id" class="knowledge-item {{activeKnowledge && activeKnowledge.id === item.id ? 'active' : ''}}" bindtap="onKnowledgeTap" data-id="{{item.id}}">
+        <view class="knowledge-item-main">
+          <text class="knowledge-title">{{item.title}}</text>
+          <text class="knowledge-description">{{item.description}}</text>
+        </view>
+        <text class="knowledge-tag">{{item.tag}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{activeKnowledge}}">
+    <view class="detail-header">
+      <text class="detail-title">{{activeKnowledge.title}}</text>
+      <text class="detail-desc">{{activeKnowledge.description}}</text>
+    </view>
+    <view class="detail-section" wx:for="{{activeKnowledge.sections}}" wx:key="title">
+      <text class="detail-section-title">{{item.title}}</text>
+      <view class="detail-list">
+        <view class="detail-item" wx:for="{{item.items}}" wx:key="index">
+          <text class="detail-dot">•</text>
+          <text class="detail-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="detail-tip" wx:if="{{activeKnowledge.tips && activeKnowledge.tips.length > 0}}">
+      <text class="detail-tip-title">练习提示</text>
+      <view class="detail-list">
+        <view class="detail-item" wx:for="{{activeKnowledge.tips}}" wx:key="index">
+          <text class="detail-dot">•</text>
+          <text class="detail-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,312 @@
+<view class="container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card card">
+    <view class="avatar-section" bindtap="onChangeAvatar">
+      <image src="{{userInfo.avatar}}" class="avatar" mode="aspectFill"></image>
+    </view>
+    
+    <view class="user-info">
+      <view class="nickname-section">
+        <text class="nickname">{{userInfo.nickname}}</text>
+        <text class="edit-btn" bindtap="onEditUserInfo" data-field="nickname">编辑</text>
+      </view>
+      
+      <text class="signature">{{userInfo.signature}}</text>
+      <text class="join-date">加入日期: {{userInfo.joinDate}}</text>
+    </view>
+  </view>
+
+  <!-- 统计数据 -->
+  <view class="stats-section card">
+    <view class="stat-item">
+      <text class="stat-value">{{totalDays}}</text>
+      <text class="stat-label">打卡总天数</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-value">{{totalHours}}</text>
+      <text class="stat-label">累计小时数</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-value">{{continuousDays}}</text>
+      <text class="stat-label">连续打卡天数</text>
+    </view>
+  </view>
+
+  <!-- 月度日历 -->
+  <view class="month-calendar card">
+    <view class="calendar-header">
+      <text class="month-nav" bindtap="onMonthChange" data-direction="prev">‹ 上月</text>
+      <text class="month-title">{{currentYear}}年{{currentMonth}}月</text>
+      <text class="month-nav" bindtap="onMonthChange" data-direction="next">下月 ›</text>
+    </view>
+    
+    <view class="weekdays">
+      <text wx:for="{{['日','一','二','三','四','五','六']}}" wx:key="index">{{item}}</text>
+    </view>
+    
+    <view class="calendar-grid">
+      <view 
+        wx:for="{{calendarCells}}" 
+        wx:key="index"
+        class="date-cell {{item.type}} {{item.isToday ? 'today' : ''}} {{item.hasRecord ? 'has-record' : ''}}"
+        bindtap="onDateTap"
+        data-date="{{item.dateStr}}"
+      >
+        <view class="date-cell-content">
+          <text class="date-number">{{item.day}}</text>
+          <view wx:if="{{item.hasRecord}}" class="record-indicator"></view>
+        </view>
+      </view>
+    </view>
+    
+    <view class="calendar-legend">
+      <view class="legend-item">
+        <view class="legend-dot today"></view>
+        <text>今日</text>
+      </view>
+      <view class="legend-item">
+        <view class="legend-dot has-record"></view>
+        <text>已打卡</text>
+      </view>
+      <view class="legend-item">
+        <view class="legend-dot"></view>
+        <text>未打卡</text>
+      </view>
+    </view>
+
+    <!-- 点选日期的当日记录展示 -->
+    <view wx:if="{{selectedDate}}" class="selected-date-records">
+      <view class="selected-date-header">
+        <text class="selected-date-title">{{selectedDate}} 练习记录</text>
+        <view class="selected-date-summary">
+          <text class="selected-date-sub">总时长：{{selectedDateTotalDuration}} 分钟</text>
+          <text class="selected-date-sub">练习次数：{{selectedDateSessions}} 次</text>
+          <text class="selected-date-sub">打卡时间：{{selectedDateCheckinTime}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{!selectedDateHasRecords}}" class="selected-date-empty">
+        <text>当日没有练习记录</text>
+      </view>
+
+      <view wx:else class="selected-date-list">
+        <view wx:for="{{selectedDateRecords}}" wx:key="id" class="selected-date-item">
+          <view class="selected-date-item-main">
+            <text class="selected-date-item-index">{{index + 1}}.</text>
+            <text class="selected-date-item-song">{{item.song}}</text>
+          </view>
+          <view class="selected-date-item-meta">
+            <text class="selected-date-item-duration">{{item.durationLabel}}</text>
+            <text class="selected-date-item-repeat">{{item.repeatLabel}}</text>
+            <text class="selected-date-item-checkin">{{item.checkinTimeLabel}}</text>
+          </view>
+          <text wx:if="{{item.notes}}" class="selected-date-item-notes">{{item.notes}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 月度统计 -->
+  <view class="month-stats card">
+    <text class="section-title">{{currentMonth}}月记录</text>
+    <view class="stats-grid">
+      <view class="month-stat">
+        <text class="month-stat-value">{{monthlyStats.days}}</text>
+        <text class="month-stat-label">练习天数</text>
+      </view>
+      <view class="month-stat">
+        <text class="month-stat-value">{{monthlyStats.totalHours}}</text>
+        <text class="month-stat-label">总小时数</text>
+      </view>
+      <view class="month-stat">
+        <text class="month-stat-value">{{monthlyStats.avgDuration}}</text>
+        <text class="month-stat-label">平均时长(分钟)</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 练习回顾整合区 -->
+  <view class="practice-hub card">
+    <text class="section-title">练习与打卡回顾</text>
+    <view class="practice-grid">
+      <view class="practice-item" bindtap="showSongStatsPage">
+        <text class="practice-label">练习曲目统计</text>
+        <text class="practice-desc">曲目练习次数与时长</text>
+      </view>
+      <view class="practice-item" bindtap="showAllRecords">
+        <text class="practice-label">全部练习记录</text>
+        <text class="practice-desc">查看全部打卡详情</text>
+      </view>
+      <view class="practice-item" bindtap="goWeeklyReview">
+        <text class="practice-label">周练习回顾</text>
+        <text class="practice-desc">本周练习趋势与统计</text>
+      </view>
+      <view class="practice-item" bindtap="goMonthlyReview">
+        <text class="practice-label">月练习回顾</text>
+        <text class="practice-desc">本月练习趋势与统计</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能按钮组 -->
+  <view class="action-buttons card">
+    <button class="btn btn-primary" bindtap="onShowShareModal">分享打卡记录</button>
+    <button class="btn btn-secondary" bindtap="onShowDonate">赞赏支持我们</button>
+    <button class="btn btn-secondary" bindtap="onOpenOfficialArticle">关注公众号</button>
+    <button class="btn btn-secondary" bindtap="onAbout">关于习练助手</button>
+    <button class="btn btn-secondary" style="color: #ff4444;" bindtap="onClearAllData">清空所有数据</button>
+  </view>
+
+  <!-- 隐藏的画布 -->
+  <canvas 
+    type="2d"
+    id="shareCanvas"
+    style="position: absolute; left: -9999px; width: {{canvasCssWidth}}px; height: {{canvasCssHeight}}px;"
+  />
+
+  <!-- 文字分享模态框 -->
+  <view wx:if="{{showShareModal}}" class="modal-mask">
+    <view class="modal-content">
+      <text class="modal-title">分享练习记录</text>
+      
+      <view class="share-date-picker">
+        <view class="date-picker-item">
+          <text>选择日期</text>
+          <picker
+            mode="date"
+            value="{{shareDate}}"
+            bindchange="onShareDateChange"
+            data-field="shareDate"
+          >
+            <text class="date-value">{{shareDate}}</text>
+          </picker>
+        </view>
+      </view>
+      
+      <view wx:if="{{shareStats}}" class="share-stats">
+        <text class="share-title">数据摘要</text>
+        <text>当日时长: {{shareStats.dayTotalMinutes}} 分钟</text>
+        <text>当日打卡: {{shareStats.daySessions}} 次</text>
+        <text>近 7 天累计: {{shareStats.weekTotalHours}} 小时（{{shareStats.weekDays}} 天 · {{shareStats.weekSessions}} 次）</text>
+        <text>近 7 天日均: {{shareStats.weekAvgDailyMinutes}} 分钟</text>
+      </view>
+      
+      <view class="share-preview">
+        <text class="share-title">分享内容预览:</text>
+        <textarea 
+          value="{{shareContent}}"
+          disabled
+          class="share-textarea"
+          maxlength="-1"
+        />
+      </view>
+      
+      <view class="modal-buttons">
+        <button class="btn btn-secondary" bindtap="closeShareModal">取消</button>
+        <button class="btn btn-primary" bindtap="onCopyShareContent">复制到剪贴板</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 图文分享模态框 -->
+  <view wx:if="{{showShareImageModal}}" class="modal-mask">
+    <view class="modal-content share-image-modal">
+      <text class="modal-title">分享图片预览</text>
+      
+      <scroll-view class="image-preview" scroll-y>
+        <image src="{{shareImagePath}}" class="share-preview-image" mode="widthFix"></image>
+      </scroll-view>
+      
+      <!-- 提示文案已移除：下方按钮已覆盖保存/分享功能 -->
+      
+      <view class="share-image-actions">
+        <button class="btn btn-primary" bindtap="saveShareImage">保存到相册</button>
+        <button class="btn btn-secondary" bindtap="shareImageToFriend">分享给朋友</button>
+      </view>
+      
+      <view class="modal-buttons">
+        <button class="btn btn-secondary" bindtap="closeShareImageModal">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 赞赏模态框 -->
+  <view wx:if="{{showDonateModal}}" class="modal-mask">
+    <view class="modal-content">
+      <text class="modal-title">感谢支持</text>
+      <text class="donate-text">如果你喜欢这个小程序，可以通过赞赏支持开发者的持续更新和维护。</text>
+      
+      <view class="qr-code-container">
+        <image src="/images/donate-qr.jpg" class="qr-code" mode="widthFix"></image>
+        <text class="qr-hint">截图扫码，助力开发</text>
+      </view>
+      
+      <view class="modal-buttons">
+        <button class="btn btn-primary" bindtap="closeDonateModal">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 所有记录列表 -->
+  <!-- 新增：曲目统计模态框 -->
+  <view wx:if="{{showSongStats}}" class="modal-mask">
+    <view class="modal-content song-stats-modal">
+      <view class="records-header">
+        <text class="modal-title">曲目练习统计</text>
+        <text class="close-btn" bindtap="hideSongStats">✕</text>
+      </view>
+      
+      <scroll-view class="song-stats-list" scroll-y style="max-height: 70vh;">
+        <view wx:if="{{songStats.length === 0}}" class="empty-songs">
+          <text>暂无曲目记录</text>
+          <text class="empty-hint">开始练习打卡后，这里会显示你的曲目统计</text>
+        </view>
+        
+        <view 
+          wx:for="{{songStats}}" 
+          wx:key="name"
+          class="song-stat-item"
+          bindtap="onViewSongDetail"
+          data-song="{{item.name}}"
+        >
+          <view class="song-rank">
+            <text class="rank-number">#{{item.rank}}</text>
+          </view>
+          
+          <view class="song-info">
+            <text class="song-name">{{item.name}}</text>
+            <view class="song-details">
+              <text class="song-count">{{item.count}}次</text>
+              <text class="song-duration">{{item.totalHours}}小时</text>
+              <text class="song-percentage">{{item.percentage}}%</text>
+            </view>
+            <view class="song-date-range">
+              <text>{{item.firstDate}} 至 {{item.lastDate}}</text>
+            </view>
+          </view>
+          
+          <view class="song-actions">
+            <text class="view-detail">详情</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 编辑用户信息模态框 -->
+  <view wx:if="{{showEditModal}}" class="modal-mask">
+    <view class="modal-content">
+      <text class="modal-title">编辑{{editingField === 'nickname' ? '昵称' : '签名'}}</text>
+      <input 
+        value="{{editValue}}"
+        bindinput="onEditInput"
+        class="modal-input"
+        placeholder="请输入..."
+      />
+      <view class="modal-buttons">
+        <button class="btn btn-secondary" bindtap="closeEditModal">取消</button>
+        <button class="btn btn-primary" bindtap="onSaveEdit">保存</button>
+      </view>
+    </view>
+  </view>
+</view>
