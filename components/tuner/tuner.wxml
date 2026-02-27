@@ -74,5 +74,6 @@
     <text>1. 将手机靠近古琴</text>
     <text>2. 弹奏选择的琴弦</text>
     <text>3. 观察指针调整琴弦松紧</text>
+    <text>4. 音名按五度相生律显示，含 E#/Fb、B#/Cb 等升降写法</text>
   </view>
 </view>
