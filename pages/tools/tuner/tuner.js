@@ -29,8 +29,7 @@ Page({
     statusText: '未开始监听',
     statusLevel: 'idle',
     needleDeg: 0,
-    stability: 0,
-    pitchReferenceList: []
+    stability: 0
   },
 
   onLoad() {
@@ -82,7 +81,6 @@ Page({
         description: '示例调式（含升降音名）',
         notes: ['Bb1', 'D1', 'F1', 'G1', 'A2', 'C2', 'E#2'],
         jianpu: ['b7', '2', '4', '5', '6', '1', '#3']
->>>>>>> main
       }
     ];
     this.setData({
@@ -101,7 +99,7 @@ Page({
       'Ab', 'A', 'A#',
       'Bb', 'B', 'B#'
     ];
-    const pitchReferenceList = names
+    this.pitchReferenceList = names
       .map((name) => {
         const relation = this.getPythagoreanRelation(name);
         if (!relation) return null;
@@ -114,8 +112,6 @@ Page({
         };
       })
       .filter(Boolean);
-
-    this.setData({ pitchReferenceList });
   },
 
   setupRecorder() {
@@ -232,7 +228,6 @@ Page({
       Bb: { fifthSteps: -5, baseOctave: 5 },
       B: { fifthSteps: 2, baseOctave: 5 },
       'B#': { fifthSteps: 9, baseOctave: 5 }
->>>>>>> main
     };
     return map[noteName] || null;
   },
@@ -716,11 +711,11 @@ Page({
     for (let i = 0; i < sampleCount; i += 1) {
       const t = i / sampleRate;
       const env = this.pianoEnvelope(t, durationSeconds);
-      const sample = this.pianoWave(frequency, t) * env;
+      const sample = this.referenceWave(frequency, t) * env;
       view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, sample)) * 32767, true);
     }
     const fs = wx.getFileSystemManager();
-    const filePath = `${wx.env.USER_DATA_PATH}/tone_${Math.round(frequency)}.wav`;
+    const filePath = `${wx.env.USER_DATA_PATH}/tone_${Number(frequency).toFixed(2).replace('.', '_')}_${Math.round(durationSeconds * 1000)}ms.wav`;
     try {
       fs.writeFileSync(filePath, buffer);
       return filePath;
@@ -730,30 +725,16 @@ Page({
     }
   },
 
-  pianoWave(frequency, time) {
-    const detune = 0.5;
-    const base = frequency;
-    const harmonics = [
-      { ratio: 1, amp: 0.8 },
-      { ratio: 2, amp: 0.5 },
-      { ratio: 3, amp: 0.35 },
-      { ratio: 4, amp: 0.2 },
-      { ratio: 5, amp: 0.15 }
-    ];
-    let value = 0;
-    harmonics.forEach(({ ratio, amp }) => {
-      const freq = base * ratio;
-      value += amp * Math.sin(2 * Math.PI * freq * time);
-      value += amp * 0.3 * Math.sin(2 * Math.PI * (freq + detune) * time);
-    });
-    return value / 2.2;
+  referenceWave(frequency, time) {
+    // 参考音以纯正弦为主，避免复杂谐波影响听感音高判断
+    return Math.sin(2 * Math.PI * frequency * time) * 0.9;
   },
 
   pianoEnvelope(time, duration) {
-    const attack = 0.02;
-    const decay = 0.18;
-    const sustainLevel = 0.6;
-    const release = 0.25;
+    const attack = 0.01;
+    const decay = 0.12;
+    const sustainLevel = 0.82;
+    const release = 0.18;
     if (time < attack) {
       return time / attack;
     }
