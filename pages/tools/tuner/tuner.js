@@ -82,7 +82,6 @@ Page({
         description: '示例调式（含升降音名）',
         notes: ['Bb1', 'D1', 'F1', 'G1', 'A2', 'C2', 'E#2'],
         jianpu: ['b7', '2', '4', '5', '6', '1', '#3']
->>>>>>> main
       }
     ];
     this.setData({
@@ -232,7 +231,6 @@ Page({
       Bb: { fifthSteps: -5, baseOctave: 5 },
       B: { fifthSteps: 2, baseOctave: 5 },
       'B#': { fifthSteps: 9, baseOctave: 5 }
->>>>>>> main
     };
     return map[noteName] || null;
   },
