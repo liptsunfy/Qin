@@ -120,7 +120,7 @@ Page({
     this.recorderManager.onError(() => {
       this.stopListening();
       this.setData({
-        statusText: '录音失败，请稍后重试',
+        statusText: '录音失败（设备可能不支持 PCM），请重试或重启微信',
         statusLevel: 'idle'
       });
     });
@@ -297,10 +297,9 @@ Page({
         this.frequencyHistory = [];
         this.stabilityHistory = [];
         this.recorderManager.start({
-          format: 'PCM',
+          format: 'pcm',
           sampleRate: 44100,
           numberOfChannels: 1,
-          encodeBitRate: 96000,
           frameSize: 8
         });
         this.listenTimer = setInterval(() => {
@@ -456,7 +455,8 @@ Page({
 
   onFrameRecorded(res) {
     if (!this.data.isListening) return;
-    const { frameBuffer } = res;
+    const frameBuffer = res && res.frameBuffer;
+    if (!frameBuffer) return;
     const detection = this.detectPitch(frameBuffer);
     if (!detection) {
       this.setData({
@@ -697,8 +697,12 @@ Page({
   },
 
   referenceWave(frequency, time) {
-    // 参考音以纯正弦为主，避免复杂谐波影响听感音高判断
-    return Math.sin(2 * Math.PI * frequency * time) * 0.9;
+    // 基频始终精确为目标频率；为改善手机小喇叭对低频（如 A2=110Hz）的可感知性，
+    // 轻微叠加 2/3 次谐波，避免“听起来偏低”但不改变基频。
+    const base = Math.sin(2 * Math.PI * frequency * time);
+    const h2 = Math.sin(2 * Math.PI * frequency * 2 * time);
+    const h3 = Math.sin(2 * Math.PI * frequency * 3 * time);
+    return base * 0.82 + h2 * 0.14 + h3 * 0.04;
   },
 
   pianoEnvelope(time, duration) {
