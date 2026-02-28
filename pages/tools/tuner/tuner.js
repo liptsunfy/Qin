@@ -628,22 +628,22 @@ Page({
   playReferenceTone() {
     const stringItem = this.data.currentString || this.data.strings[this.data.currentStringIndex];
     const frequency = stringItem ? stringItem.frequency : this.data.a4;
-    const filePath = this.generateToneFile(frequency, 1.2);
+    const filePath = this.generateToneFile(frequency, 2.5);
     if (!filePath) return;
     if (!this.toneContext) {
       this.toneContext = wx.createInnerAudioContext();
+      this.toneContext.obeyMuteSwitch = false;
+      this.toneContext.loop = true;
+      this.toneContext.volume = 1;
+      this.toneContext.onStop(() => {
+        this.setData({ isTonePlaying: false });
+      });
+      this.toneContext.onError(() => {
+        this.setData({ isTonePlaying: false });
+        wx.showToast({ title: '播放参考音失败', icon: 'none' });
+      });
     }
     this.toneContext.src = filePath;
-    this.toneContext.onEnded(() => {
-      this.setData({ isTonePlaying: false });
-    });
-    this.toneContext.onStop(() => {
-      this.setData({ isTonePlaying: false });
-    });
-    this.toneContext.onError(() => {
-      this.setData({ isTonePlaying: false });
-      wx.showToast({ title: '播放参考音失败', icon: 'none' });
-    });
     this.toneContext.play();
     this.setData({ isTonePlaying: true });
   },
@@ -688,7 +688,7 @@ Page({
     const fs = wx.getFileSystemManager();
     const filePath = `${wx.env.USER_DATA_PATH}/tone_${Number(frequency).toFixed(2).replace('.', '_')}_${Math.round(durationSeconds * 1000)}ms.wav`;
     try {
-      fs.writeFileSync(filePath, buffer);
+      fs.writeFileSync(filePath, buffer, "binary");
       return filePath;
     } catch (err) {
       wx.showToast({ title: '参考音生成失败', icon: 'none' });

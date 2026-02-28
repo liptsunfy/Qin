@@ -68,6 +68,7 @@
         </view>
         <view class="dial-center-dot"></view>
         <view class="dial-value">{{cents}}c</view>
+        <view class="dial-target">目标 {{currentString ? currentString.note : "--"}}{{currentString ? currentString.octave : ""}} · {{currentString ? currentString.frequency.toFixed(1) : "--"}}Hz</view>
       </view>
       <view class="dial-scale-text">
         <text>-50</text>

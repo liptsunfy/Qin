@@ -42,7 +42,8 @@
 .dial-needle-wrap{position:absolute;left:50%;bottom:22rpx;width:8rpx;height:136rpx;transform-origin:bottom center;transition:transform .16s ease-out}
 .dial-needle{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:8rpx;height:136rpx;border-radius:999rpx;background:linear-gradient(180deg,#ffedc9 0%,#d9a463 45%,#a96a2b 100%);box-shadow:0 0 14rpx rgba(170,110,45,0.35)}
 .dial-center-dot{position:absolute;left:50%;bottom:12rpx;transform:translateX(-50%);width:26rpx;height:26rpx;border-radius:50%;background:#313845;border:4rpx solid #f7f8fb;box-shadow:0 4rpx 10rpx rgba(0,0,0,.25)}
-.dial-value{position:absolute;bottom:58rpx;font-size:30rpx;font-weight:700;color:#434b5a}
+.dial-value{position:absolute;bottom:82rpx;font-size:30rpx;font-weight:700;color:#434b5a}
+.dial-target{position:absolute;bottom:42rpx;font-size:20rpx;font-weight:600;color:#667085;background:rgba(255,255,255,0.72);padding:4rpx 12rpx;border-radius:999rpx}
 .dial-scale-text{width:100%;display:flex;justify-content:space-between;font-size:20rpx;color:#9aa2b1;padding:0 10rpx}
 .status-pill{padding:10rpx 18rpx;border-radius:999rpx;font-size:22rpx;display:inline-flex;align-items:center;justify-content:center;background:#f2f2f2;color:#666;font-weight:600}
 .status-pill.ok{background:#ecf8f2;color:#2b7a5a}
