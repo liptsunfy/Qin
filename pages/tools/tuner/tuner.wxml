@@ -22,18 +22,7 @@
     <view class="setting-row compact">
       <text class="setting-label">基准音 A4</text>
       <view class="setting-input">
-        <view class="a4-stepper">
-          <view class="step-btn" data-step="-1" bindtap="adjustA4">-</view>
-          <input
-            class="a4-input"
-            type="number"
-            value="{{a4}}"
-            maxlength="3"
-            bindinput="onA4Input"
-          />
-          <view class="step-btn" data-step="1" bindtap="adjustA4">+</view>
-        </view>
-        <text class="setting-value-text">Hz</text>
+        <text class="setting-fixed-value">440 Hz（国际标准）</text>
       </view>
     </view>
   </view>

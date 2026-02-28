@@ -11,6 +11,7 @@
 .picker-content{display:flex;flex-direction:column;align-items:flex-end;gap:6rpx}
 .setting-desc{font-size:20rpx;color:#8c93a5}
 .setting-input{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:10rpx}
+.setting-fixed-value{font-size:24rpx;color:#2d2f36;font-weight:700;background:#f3f5fa;padding:10rpx 18rpx;border-radius:14rpx}
 .a4-stepper{display:flex;align-items:center;gap:10rpx;background:#f3f5fa;border-radius:18rpx;padding:6rpx 10rpx;width:fit-content}
 .step-btn{width:56rpx;height:56rpx;border-radius:16rpx;background:#ffffff;color:#2d2f36;font-weight:700;font-size:28rpx;line-height:56rpx;text-align:center;box-shadow:0 6rpx 12rpx rgba(0,0,0,0.06)}
 .a4-input{width:120rpx;height:56rpx;border-radius:14rpx;background:#ffffff;text-align:center;font-size:26rpx;color:#2d2f36;font-weight:700;box-shadow:inset 0 0 0 1rpx rgba(0,0,0,0.04)}

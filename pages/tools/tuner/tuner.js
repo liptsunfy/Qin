@@ -52,34 +52,33 @@ Page({
   },
 
   setupPresets() {
-    // 正调（1=F）按用户提供基准（显式写死，避免任何自动换算误差）
     // 正调（1=F）按用户提供基准：
-    // C1=65.19, D1=73.33, F1=87.09, G1=97.78, A2=110.00, C2=130.37, D2=146.67
+    // C2=65.4, D2=73.4, F2=87.3, G2=98.0, A2=110.0, C3=130.8, D3=146.8
     const tuningPresets = [
       {
         name: '正调',
         description: '1=F（五度相生律基准）',
         notes: [
-          { note: 'C1', frequency: 65.19 },
-          { note: 'D1', frequency: 73.33 },
-          { note: 'F1', frequency: 87.09 },
-          { note: 'G1', frequency: 97.78 },
-          { note: 'A2', frequency: 110.00 },
-          { note: 'C2', frequency: 130.37 },
-          { note: 'D2', frequency: 146.67 }
+          { note: 'C2', frequency: 65.4 },
+          { note: 'D2', frequency: 73.4 },
+          { note: 'F2', frequency: 87.3 },
+          { note: 'G2', frequency: 98.0 },
+          { note: 'A2', frequency: 110.0 },
+          { note: 'C3', frequency: 130.8 },
+          { note: 'D3', frequency: 146.8 }
         ],
         jianpu: ['1', '2', '4', '5', '6', '1', '2']
       },
       {
         name: '蕤宾调',
         description: '示例调式（含升降音名）',
-        notes: ['C1', 'D1', 'E#1', 'G1', 'A2', 'Cb2', 'D2'],
+        notes: ['C2', 'D2', 'E#2', 'G2', 'A2', 'Cb3', 'D3'],
         jianpu: ['1', '2', '#3', '5', '6', 'b1', '2']
       },
       {
         name: '黄钟调',
         description: '示例调式（含升降音名）',
-        notes: ['Bb1', 'D1', 'F1', 'G1', 'A2', 'C2', 'E#2'],
+        notes: ['Bb2', 'D2', 'F2', 'G2', 'A2', 'C3', 'E#3'],
         jianpu: ['b7', '2', '4', '5', '6', '1', '#3']
       }
     ];
@@ -99,19 +98,11 @@ Page({
       'Ab', 'A', 'A#',
       'Bb', 'B', 'B#'
     ];
-    this.pitchReferenceList = names
-      .map((name) => {
-        const relation = this.getPythagoreanRelation(name);
-        if (!relation) return null;
-        const note = `${name}${relation.baseOctave}`;
-        return {
-          name,
-          note,
-          fifthSteps: relation.fifthSteps,
-          frequency: this.noteToFrequency(note, this.data.a4)
-        };
-      })
-      .filter(Boolean);
+    this.pitchReferenceList = names.map((name) => ({
+      name,
+      note: `${name}2`,
+      frequency: this.noteToFrequency(`${name}2`, this.data.a4)
+    }));
   },
 
   setupRecorder() {
@@ -174,62 +165,48 @@ Page({
   normalizeNoteToken(note) {
     if (!note || typeof note !== 'string') return null;
     const token = note.trim();
-    const [name, octave] = this.parseNote(token);
-    if (!name || octave === '') return null;
-    if (!this.getPythagoreanRelation(name)) return null;
-    return `${name}${octave}`;
+    const match = /^([A-G])([#b]?)(\d{1,2})$/.exec(token);
+    if (!match) return null;
+    return `${match[1]}${match[2]}${match[3]}`;
   },
 
   noteToFrequency(note, a4) {
-    // 五度相生律（不使用十二平均律）：
-    // f = A4 * (3/2)^k * 2^(octave - baseOctave)
-    // 其中 k 为音名在五度链中的步数，baseOctave 为该音名的参考音组。
-    const [name, octave] = this.parseNote(note);
-    const relation = this.getPythagoreanRelation(name);
-    if (!relation) return Number(a4.toFixed(2));
+    // 五度相生律后台算法锚点：A2 = 110Hz（对应国际基准音 A4 = 440Hz）
+    // 自然音：由 A 音沿五度链计算，再八度归并到目标音区；
+    // 升半音：* 256/243；降半音：* 243/256。
+    const [name, octaveText] = this.parseNote(note);
+    const match = /^([A-G])([#b]?)$/.exec(name);
+    if (!match) return Number((a4 / 4).toFixed(2));
 
-    const targetOctave = Number(octave || relation.baseOctave);
-    const octaveDelta = targetOctave - relation.baseOctave;
-    const frequency = a4 * Math.pow(3 / 2, relation.fifthSteps) * Math.pow(2, octaveDelta);
-    return Number(frequency.toFixed(2));
+    const letter = match[1];
+    const accidental = match[2];
+    const octave = Number(octaveText);
+    const naturalFrequency = this.getNaturalFrequency(letter, octave, a4);
+
+    let accidentalRatio = 1;
+    if (accidental === '#') accidentalRatio = 256 / 243;
+    if (accidental === 'b') accidentalRatio = 243 / 256;
+
+    return Number((naturalFrequency * accidentalRatio).toFixed(2));
   },
 
-  getPythagoreanRelation(noteName) {
-    // 明确列出每个音名（含升降号）在五度相生律中的关系。
-    // 这里不做十二平均律等音并同：
-    // 例如 E# 与 F、Fb 与 E、B# 与 C、Cb 与 B 都是独立条目。
-    // fifthSteps: 相对 A 的五度链步数（每步乘 3/2）
-    // baseOctave: 该音名在本工具中的参考音组
-    const map = {
-      Cb: { fifthSteps: -10, baseOctave: 2 },
-      C: { fifthSteps: -3, baseOctave: 2 },
-      'C#': { fifthSteps: 4, baseOctave: 2 },
-
-      Db: { fifthSteps: -8, baseOctave: 3 },
-      D: { fifthSteps: -1, baseOctave: 3 },
-      'D#': { fifthSteps: 6, baseOctave: 3 },
-
-      Eb: { fifthSteps: -6, baseOctave: 4 },
-      E: { fifthSteps: 1, baseOctave: 4 },
-      'E#': { fifthSteps: 8, baseOctave: 4 },
-
-      Fb: { fifthSteps: -11, baseOctave: 1 },
-      F: { fifthSteps: -4, baseOctave: 1 },
-      'F#': { fifthSteps: 3, baseOctave: 1 },
-
-      Gb: { fifthSteps: -9, baseOctave: 2 },
-      G: { fifthSteps: -2, baseOctave: 2 },
-      'G#': { fifthSteps: 5, baseOctave: 2 },
-
-      Ab: { fifthSteps: -7, baseOctave: 4 },
-      A: { fifthSteps: 0, baseOctave: 4 },
-      'A#': { fifthSteps: 7, baseOctave: 4 },
-
-      Bb: { fifthSteps: -5, baseOctave: 5 },
-      B: { fifthSteps: 2, baseOctave: 5 },
-      'B#': { fifthSteps: 9, baseOctave: 5 }
+  getNaturalFrequency(letter, octave, a4 = 440) {
+    // 以 A4=440 (=> A2=110) 为基准，采用项目约定的自然音参考频率（2组）
+    // 并按八度倍频扩展到其它音区。
+    const naturalRefOctave2 = {
+      C: 65.4,
+      D: 73.4,
+      E: 82.5,
+      F: 87.3,
+      G: 98.0,
+      A: 110.0,
+      B: 123.8
     };
-    return map[noteName] || null;
+    const ref = naturalRefOctave2[letter];
+    if (!ref) return 110;
+
+    const a4Scale = a4 / 440;
+    return ref * Math.pow(2, octave - 2) * a4Scale;
   },
 
   onStringTap(e) {
@@ -395,20 +372,14 @@ Page({
   },
 
   onA4Input(e) {
-    const value = Number(e.detail.value);
-    if (!value) return;
-    const clamped = Math.max(415, Math.min(466, value));
-    this.setData({ a4: clamped });
+    this.setData({ a4: 440 });
     this.applyPreset(this.data.currentPresetIndex);
     this.buildPitchReferenceList();
     this.updateTuningFeedback(true);
   },
 
   adjustA4(e) {
-    const step = Number(e.currentTarget.dataset.step || 0);
-    if (!step) return;
-    const next = Math.max(415, Math.min(466, this.data.a4 + step));
-    this.setData({ a4: next });
+    this.setData({ a4: 440 });
     this.applyPreset(this.data.currentPresetIndex);
     this.buildPitchReferenceList();
     this.updateTuningFeedback(true);
