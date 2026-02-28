@@ -22,18 +22,7 @@
     <view class="setting-row compact">
       <text class="setting-label">基准音 A4</text>
       <view class="setting-input">
-        <view class="a4-stepper">
-          <view class="step-btn" data-step="-1" bindtap="adjustA4">-</view>
-          <input
-            class="a4-input"
-            type="number"
-            value="{{a4}}"
-            maxlength="3"
-            bindinput="onA4Input"
-          />
-          <view class="step-btn" data-step="1" bindtap="adjustA4">+</view>
-        </view>
-        <text class="setting-value-text">Hz</text>
+        <text class="setting-fixed-value">440 Hz（国际标准）</text>
       </view>
     </view>
   </view>
@@ -58,25 +47,37 @@
       <text>音量 {{volume}}</text>
       <text>稳定度 {{stability}}%</text>
     </view>
-    <view class="dial">
-      <view class="dial-arc">
-        <view class="dial-tick left"></view>
-        <view class="dial-tick center"></view>
-        <view class="dial-tick right"></view>
-        <view class="dial-needle" style="transform: rotate({{needleDeg}}deg);"></view>
-        <view class="dial-value">{{cents}}c</view>
+
+    <view class="dial-wrap">
+      <view class="dial-label-row">
+        <text class="dial-caption low">偏低</text>
+        <text class="dial-caption center">标准</text>
+        <text class="dial-caption high">偏高</text>
       </view>
-      <view class="dial-labels">
-        <text>偏低</text>
-        <text>标准</text>
-        <text>偏高</text>
+      <view class="dial">
+        <view class="dial-arc-bg"></view>
+        <view class="dial-scale">
+          <view class="dial-tick left"></view>
+          <view class="dial-tick quarter-left"></view>
+          <view class="dial-tick center"></view>
+          <view class="dial-tick quarter-right"></view>
+          <view class="dial-tick right"></view>
+        </view>
+        <view class="dial-needle-wrap" style="transform: rotate({{needleDeg}}deg);">
+          <view class="dial-needle"></view>
+        </view>
+        <view class="dial-center-dot"></view>
+        <view class="dial-value">{{cents}}c</view>
       </view>
       <view class="dial-scale-text">
         <text>-50</text>
+        <text>-25</text>
         <text>0</text>
+        <text>+25</text>
         <text>+50</text>
       </view>
     </view>
+
     <view class="status-pill {{statusLevel}}">
       <text>{{statusText}}</text>
     </view>
@@ -101,19 +102,4 @@
       </view>
     </view>
   </view>
-
-  <view class="card compact-card" wx:if="{{pitchReferenceList.length}}">
-    <view class="section-header">
-      <text class="section-title">五度相生律音名表（含升降）</text>
-    </view>
-    <view class="string-grid">
-      <view wx:for="{{pitchReferenceList}}" wx:key="name" class="string-item">
-        <text class="string-name">{{item.name}}</text>
-        <text class="string-note">{{item.note}}</text>
-        <text class="string-jianpu">k={{item.fifthSteps}}</text>
-        <text class="string-status tuned">{{item.frequency}}Hz</text>
-      </view>
-    </view>
-  </view>
-
 </view>
