@@ -11,6 +11,7 @@
 .picker-content{display:flex;flex-direction:column;align-items:flex-end;gap:6rpx}
 .setting-desc{font-size:20rpx;color:#8c93a5}
 .setting-input{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:10rpx}
+.setting-fixed-value{font-size:24rpx;color:#2d2f36;font-weight:700;background:#f3f5fa;padding:10rpx 18rpx;border-radius:14rpx}
 .a4-stepper{display:flex;align-items:center;gap:10rpx;background:#f3f5fa;border-radius:18rpx;padding:6rpx 10rpx;width:fit-content}
 .step-btn{width:56rpx;height:56rpx;border-radius:16rpx;background:#ffffff;color:#2d2f36;font-weight:700;font-size:28rpx;line-height:56rpx;text-align:center;box-shadow:0 6rpx 12rpx rgba(0,0,0,0.06)}
 .a4-input{width:120rpx;height:56rpx;border-radius:14rpx;background:#ffffff;text-align:center;font-size:26rpx;color:#2d2f36;font-weight:700;box-shadow:inset 0 0 0 1rpx rgba(0,0,0,0.04)}
@@ -23,16 +24,27 @@
 .status-actions{display:flex;align-items:center;gap:10rpx;font-size:22rpx;color:#5c6475;background:#f6f7fb;padding:6rpx 12rpx;border-radius:999rpx}
 .status-toggle{font-size:22rpx;color:#5c6475}
 .status-meta{display:flex;justify-content:space-between;font-size:22rpx;color:#7b8394}
-.dial{display:flex;flex-direction:column;gap:8rpx;align-items:center}
-.dial-arc{width:100%;height:120rpx;border-radius:120rpx 120rpx 24rpx 24rpx;background:#eef1f6;position:relative;overflow:hidden;display:flex;justify-content:center;align-items:flex-end;padding-bottom:16rpx}
-.dial-tick{position:absolute;bottom:16rpx;width:4rpx;height:36rpx;background:#1d1f25;border-radius:999rpx;opacity:0.6}
-.dial-tick.left{left:12%}
-.dial-tick.center{left:50%;height:44rpx;transform:translateX(-50%);opacity:1}
-.dial-tick.right{right:12%}
-.dial-needle{width:4rpx;height:70rpx;background:linear-gradient(180deg,#d6a168,#b67c46);border-radius:999rpx;transform-origin:bottom center;transition:transform 0.2s ease}
-.dial-value{position:absolute;bottom:12rpx;font-size:28rpx;font-weight:700;color:#b67c46}
-.dial-labels{width:100%;display:flex;justify-content:space-between;font-size:20rpx;color:#a0a7b6}
-.dial-scale-text{width:100%;display:flex;justify-content:space-between;font-size:20rpx;color:#9aa2b1}
+.dial-wrap{display:flex;flex-direction:column;gap:10rpx;align-items:center;padding:8rpx 8rpx 0}
+.dial-label-row{width:100%;display:flex;justify-content:space-between;padding:0 12rpx}
+.dial-caption{font-size:20rpx;font-weight:600}
+.dial-caption.low{color:#6480a5}
+.dial-caption.center{color:#6f7788}
+.dial-caption.high{color:#b26a6a}
+.dial{width:100%;height:220rpx;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:24rpx}
+.dial-arc-bg{position:absolute;left:0;right:0;bottom:0;height:190rpx;border-radius:190rpx 190rpx 30rpx 30rpx;background:linear-gradient(90deg,#dbe9ff 0%,#eef2f8 35%,#f3f5f8 50%,#f8eeec 65%,#ffe0de 100%);box-shadow:inset 0 -8rpx 20rpx rgba(0,0,0,0.04)}
+.dial-scale{position:absolute;left:0;right:0;bottom:18rpx;height:120rpx}
+.dial-tick{position:absolute;bottom:0;width:4rpx;border-radius:999rpx;background:#636b7a;opacity:.45}
+.dial-tick.left{left:10%;height:42rpx}
+.dial-tick.quarter-left{left:30%;height:56rpx}
+.dial-tick.center{left:50%;transform:translateX(-50%);height:74rpx;opacity:1;background:#343b48}
+.dial-tick.quarter-right{right:30%;height:56rpx}
+.dial-tick.right{right:10%;height:42rpx}
+.dial-needle-wrap{position:absolute;left:50%;bottom:22rpx;width:8rpx;height:136rpx;transform-origin:bottom center;transition:transform .16s ease-out}
+.dial-needle{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:8rpx;height:136rpx;border-radius:999rpx;background:linear-gradient(180deg,#ffedc9 0%,#d9a463 45%,#a96a2b 100%);box-shadow:0 0 14rpx rgba(170,110,45,0.35)}
+.dial-center-dot{position:absolute;left:50%;bottom:12rpx;transform:translateX(-50%);width:26rpx;height:26rpx;border-radius:50%;background:#313845;border:4rpx solid #f7f8fb;box-shadow:0 4rpx 10rpx rgba(0,0,0,.25)}
+.dial-value{position:absolute;bottom:82rpx;font-size:30rpx;font-weight:700;color:#434b5a}
+.dial-target{position:absolute;bottom:42rpx;font-size:20rpx;font-weight:600;color:#667085;background:rgba(255,255,255,0.72);padding:4rpx 12rpx;border-radius:999rpx}
+.dial-scale-text{width:100%;display:flex;justify-content:space-between;font-size:20rpx;color:#9aa2b1;padding:0 10rpx}
 .status-pill{padding:10rpx 18rpx;border-radius:999rpx;font-size:22rpx;display:inline-flex;align-items:center;justify-content:center;background:#f2f2f2;color:#666;font-weight:600}
 .status-pill.ok{background:#ecf8f2;color:#2b7a5a}
 .status-pill.low{background:#fef3e6;color:#b26a00}
