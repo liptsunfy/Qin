@@ -1,0 +1,6 @@
+.page { padding:24rpx; background:#f7f8fa; min-height:100vh; }
+.card { background:#fff; border-radius:20rpx; padding:24rpx; margin-bottom:20rpx; }
+.title { font-size:38rpx; font-weight:700; color:#222; margin-bottom:12rpx; display:block; }
+.subtitle { font-size:30rpx; font-weight:600; color:#333; margin-bottom:10rpx; display:block; }
+.text, .list text { font-size:26rpx; color:#666; line-height:1.8; display:block; }
+.callout { border:2rpx solid #e8d8b8; background:#fffdf8; }

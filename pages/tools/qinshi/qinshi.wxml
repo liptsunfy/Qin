@@ -1,0 +1,21 @@
+<view class="page">
+  <view class="card hero">
+    <text class="title">琴事</text>
+    <text class="text">{{intro}}</text>
+  </view>
+
+  <view class="card">
+    <text class="subtitle">内容方向（预留）</text>
+    <view class="list">
+      <text>• 热门事件与讨论</text>
+      <text>• 近期演出 / 雅集 / 讲座信息</text>
+      <text>• 优质曲目、版本与学习资源推荐</text>
+      <text>• 琴馆活动与社区共创动态</text>
+    </view>
+  </view>
+
+  <view class="card callout">
+    <text class="subtitle">投稿与分享</text>
+    <text class="text">{{invite}}</text>
+  </view>
+</view>

@@ -1,0 +1,12 @@
+<view class="page">
+  <view class="card hero">
+    <text class="title">{{province}}</text>
+  </view>
+
+  <view class="card">
+    <view wx:for="{{cities}}" wx:key="city" class="item" bindtap="onCityTap" data-city="{{item.city}}">
+      <text class="name">{{item.city}}</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+</view>

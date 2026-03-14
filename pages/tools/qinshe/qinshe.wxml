@@ -1,0 +1,34 @@
+<view class="page">
+  <view class="card hero">
+    <text class="title">琴馆检索</text>
+  </view>
+
+  <view class="card search-card">
+    <input class="search-input" placeholder="搜索琴馆名称 / 城市 / 省份" value="{{keyword}}" bindinput="onKeywordInput" />
+    <text wx:if="{{keyword}}" class="clear" bindtap="onClearKeyword">清空</text>
+  </view>
+
+  <view wx:if="{{keyword && searchResults.length > 0}}" class="card">
+    <text class="result-title">检索结果（琴馆名称 / 城市）</text>
+    <view wx:for="{{searchResults}}" wx:key="index" class="result-item" bindtap="onSearchResultTap" data-province="{{item.province}}" data-city="{{item.city}}">
+      <text class="result-name">{{item.venueName}}</text>
+      <text class="result-meta">{{item.province}} · {{item.city}}</text>
+      <text class="result-contact">{{item.contact}}</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <view wx:if="{{keyword && searchResults.length === 0 && provinces.length === 0}}" class="card empty">
+    <text>未找到匹配的琴馆或城市</text>
+  </view>
+
+  <view class="card">
+    <view wx:for="{{provinces}}" wx:key="province" class="item" bindtap="onProvinceTap" data-province="{{item.province}}">
+      <view>
+        <text class="name">{{item.province}}</text>
+        <text class="sub">地级市数量：{{item.cityCount}}</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,111 @@
+<!-- pages/tools/notation/notation.wxml -->
+<view class="page">
+  <view class="header">
+    <view class="title">减字谱查询</view>
+    <view class="subtitle">常见符号对照与读谱提示</view>
+  </view>
+
+  <view class="search">
+    <input
+      class="search-input"
+      placeholder="输入符号/术语，例如：勾、泛音、绰..."
+      value="{{query}}"
+      confirm-type="search"
+      bindinput="onInput"
+    />
+    <view class="search-actions">
+      <button class="btn-ghost" size="mini" bindtap="onClear" wx:if="{{query}}">清空</button>
+    </view>
+  </view>
+
+  <scroll-view class="cats" scroll-x="true" show-scrollbar="false">
+    <view class="cats-inner">
+      <view
+        wx:for="{{categories}}"
+        wx:key="*this"
+        class="cat {{activeCategory===item?'active':''}}"
+        data-cat="{{item}}"
+        bindtap="onCategoryTap"
+      >{{item}}</view>
+    </view>
+  </scroll-view>
+
+  <view class="quick">
+    <view class="quick-label">快捷：</view>
+    <view class="quick-chips">
+      <view
+        wx:for="{{quickSymbols}}"
+        wx:key="*this"
+        class="chip"
+        data-sym="{{item}}"
+        bindtap="onQuickTap"
+      >{{item}}</view>
+    </view>
+  </view>
+
+  <view class="meta">
+    <text class="meta-text">共 {{total}} 条</text>
+  </view>
+
+  <view class="list">
+    <view
+      wx:for="{{results}}"
+      wx:key="id"
+      class="item"
+      data-id="{{item.id}}"
+      bindtap="onItemTap"
+    >
+      <view class="item-left">
+        <image class="symbol-img" src="{{item.imgSrc}}" mode="aspectFit" />
+      </view>
+      <view class="item-right">
+        <view class="row1">
+          <view class="name">{{item.name}}</view>
+          <view class="tag">{{item.category}}</view>
+        </view>
+        <view class="desc">{{item.desc}}</view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{total===0}}">
+      <view class="empty-title">未找到匹配结果</view>
+      <view class="empty-sub">可尝试切换分类或输入更短关键词（如：勾、吟、泛）。</view>
+    </view>
+  </view>
+
+  <!-- 详情弹层 -->
+  <view class="overlay" wx:if="{{detailVisible}}" bindtap="closeDetail">
+    <view class="sheet" bindtap="noop">
+      <view class="sheet-header">
+        <view class="sheet-title">
+          <image class="sheet-symbol-img" src="{{detailItem.imgSrc}}" mode="aspectFit" />
+          <text class="sheet-name">{{detailItem.name}}</text>
+        </view>
+        <view class="sheet-tag">{{detailItem.category}}</view>
+      </view>
+
+      <view class="sheet-body">
+        <view class="block">
+          <view class="block-title">释义</view>
+          <view class="block-text">{{detailItem.desc}}</view>
+        </view>
+
+        <view class="block" wx:if="{{detailItem.tips}}">
+          <view class="block-title">要点</view>
+          <view class="block-text">{{detailItem.tips}}</view>
+        </view>
+
+        <view class="block" wx:if="{{detailItem.keywords && detailItem.keywords.length}}">
+          <view class="block-title">关键词</view>
+          <view class="kw">
+            <view wx:for="{{detailItem.keywords}}" wx:key="*this" class="kw-chip">{{item}}</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="sheet-footer">
+        <button class="btn" bindtap="closeDetail">关闭</button>
+      </view>
+    </view>
+  </view>
+</view>
