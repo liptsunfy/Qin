@@ -1,6 +1,7 @@
 <view class="page">
   <view class="card hero">
     <text class="title">琴馆检索</text>
+    <text class="notice">如需添加或修改，关注公众号“鹿鸣琴室”私信添加</text>
   </view>
 
   <view class="card search-card">
@@ -26,7 +27,7 @@
     <view wx:for="{{provinces}}" wx:key="province" class="item" bindtap="onProvinceTap" data-province="{{item.province}}">
       <view>
         <text class="name">{{item.province}}</text>
-        <text class="sub">地级市数量：{{item.cityCount}}</text>
+        <text class="sub">收录琴馆数量：{{item.venueCount}}</text>
       </view>
       <text class="arrow">›</text>
     </view>
