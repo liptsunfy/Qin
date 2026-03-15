@@ -128,48 +128,125 @@ Page({
 
   setupRecorder() {
     this.recorderManager = wx.getRecorderManager();
+    this.recorderState = {
+      startToken: 0,
+      hasFirstFrame: false,
+      startupTimer: null,
+      switching: false
+    };
+
     this.recorderManager.onFrameRecorded(this.onFrameRecorded.bind(this));
     this.recorderManager.onStop(() => {
-      if (this.data.isListening) {
-        this.setData({
-          isListening: false,
-          statusText: '录音已停止',
-          statusLevel: 'idle'
-        });
-      }
+      if (!this.data.isListening) return;
+      // 避免切参过程中 stop 误触发最终失败
+      if (this.recorderState && this.recorderState.switching) return;
+      this.setData({
+        isListening: false,
+        statusText: '录音已停止',
+        statusLevel: 'idle'
+      });
     });
     this.recorderManager.onError((err) => {
-      this.retryRecorderProfile(err);
+      if (!this.data.isListening) return;
+      this.switchToNextProfile((err && err.errMsg) || 'onError');
     });
   },
 
+  clearStartupTimer() {
+    if (this.recorderState && this.recorderState.startupTimer) {
+      clearTimeout(this.recorderState.startupTimer);
+      this.recorderState.startupTimer = null;
+    }
+  },
 
-  retryRecorderProfile(err) {
-    const nextIndex = this.data.recorderProfileIndex + 1;
-    if (this.data.isListening && this.recorderProfiles && nextIndex < this.recorderProfiles.length) {
-      const profile = this.recorderProfiles[nextIndex];
+  buildStartOptions(profile) {
+    const options = {
+      duration: 10 * 60 * 1000,
+      numberOfChannels: 1,
+      sampleRate: profile.sampleRate || 16000,
+      frameSize: profile.frameSize || 5
+    };
+    if (profile.format) options.format = profile.format;
+    if (profile.useMic) options.audioSource = 'mic';
+    return options;
+  },
+
+  startWithProfile(index) {
+    if (!this.data.isListening) return;
+    const profile = (this.recorderProfiles && this.recorderProfiles[index]) || null;
+    if (!profile) {
       this.setData({
-        recorderProfileIndex: nextIndex,
-        statusText: `录音参数切换中（${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz${profile.useMic ? '/mic' : ''}）…`,
-        statusLevel: 'listening'
+        isListening: false,
+        statusText: '录音失败：当前设备录音参数不兼容',
+        statusLevel: 'idle'
       });
-      try {
-        this.recorderManager.stop();
-      } catch (e) {
-        // ignore
-      }
-      setTimeout(() => {
-        if (this.data.isListening) {
-          this.startRecorderWithCurrentProfile();
-        }
-      }, 80);
       return;
     }
-    this.stopListening();
+
+    const token = Date.now() + Math.floor(Math.random() * 1000);
+    this.recorderState.startToken = token;
+    this.recorderState.hasFirstFrame = false;
+    this.recorderState.switching = false;
+    this.clearStartupTimer();
+
+    this.currentRecorderSampleRate = profile.sampleRate || 16000;
+    this.currentRecorderFormat = (profile.format || '').toLowerCase();
     this.setData({
-      statusText: `录音失败：当前设备录音参数不兼容（${(err && err.errMsg) || 'unknown'}）`,
-      statusLevel: 'idle'
+      recorderProfileIndex: index,
+      statusText: `正在监听音高（${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz${profile.useMic ? '/mic' : ''}）…`,
+      statusLevel: 'listening'
     });
+
+    const startOptions = this.buildStartOptions(profile);
+    try {
+      this.recorderManager.start(startOptions);
+    } catch (err) {
+      this.switchToNextProfile((err && err.errMsg) || 'start throw');
+      return;
+    }
+
+    // 某些机型 start 不报错但永远不回帧：超时后自动切参数
+    this.recorderState.startupTimer = setTimeout(() => {
+      if (!this.data.isListening) return;
+      if (!this.recorderState || this.recorderState.startToken !== token) return;
+      if (!this.recorderState.hasFirstFrame) {
+        this.switchToNextProfile('start ok but no frame');
+      }
+    }, 2500);
+  },
+
+  switchToNextProfile(reason) {
+    if (!this.data.isListening || !this.recorderProfiles) return;
+    const nextIndex = this.data.recorderProfileIndex + 1;
+    if (nextIndex >= this.recorderProfiles.length) {
+      this.stopListening(false);
+      this.setData({
+        isListening: false,
+        statusText: `录音失败：当前设备录音参数不兼容（${reason}）`,
+        statusLevel: 'idle'
+      });
+      return;
+    }
+
+    const next = this.recorderProfiles[nextIndex];
+    this.recorderState.switching = true;
+    this.clearStartupTimer();
+    this.setData({
+      recorderProfileIndex: nextIndex,
+      statusText: `录音参数切换中（${next.format || 'default'}/${next.sampleRate || 'default'}Hz${next.useMic ? '/mic' : ''}）…`,
+      statusLevel: 'listening'
+    });
+
+    try {
+      this.recorderManager.stop();
+    } catch (e) {
+      // ignore stop race
+    }
+
+    setTimeout(() => {
+      if (!this.data.isListening) return;
+      this.startWithProfile(nextIndex);
+    }, 120);
   },
 
   startRecorderWithCurrentProfile() {
@@ -369,16 +446,10 @@ Page({
         this.firstFrameDeadlineAt = Date.now() + 2200;
         this.frequencyHistory = [];
         this.stabilityHistory = [];
-        this.startRecorderWithCurrentProfile();
+        this.startWithProfile(this.data.recorderProfileIndex || 0);
         this.listenTimer = setInterval(() => {
           const now = Date.now();
-          if (!this.lastFrameAt) {
-            if (this.firstFrameDeadlineAt && now > this.firstFrameDeadlineAt) {
-              this.retryRecorderProfile({ errMsg: 'start ok but no frame data' });
-              this.firstFrameDeadlineAt = now + 2200;
-            }
-            return;
-          }
+          if (!this.lastFrameAt) return;
           if (now - this.lastFrameAt > 1200) {
             this.setData({
               tuningValue: 0,
@@ -410,6 +481,7 @@ Page({
       clearInterval(this.listenTimer);
       this.listenTimer = null;
     }
+    this.clearStartupTimer();
     if (this.recorderManager) {
       try {
         this.recorderManager.stop();
@@ -428,8 +500,11 @@ Page({
     this.recorderProfiles = this.getRecorderProfiles();
     this.frequencyHistory = [];
     this.stabilityHistory = [];
-    this.currentRecorderFormat = "";
-    this.firstFrameDeadlineAt = 0;
+    this.currentRecorderFormat = '';
+    if (this.recorderState) {
+      this.recorderState.hasFirstFrame = false;
+      this.recorderState.switching = false;
+    }
   },
 
   maybeAutoAdvance() {
@@ -561,7 +636,11 @@ Page({
     if (!this.data.isListening) return;
     const frameBuffer = res && res.frameBuffer;
     if (!frameBuffer) return;
-    this.firstFrameDeadlineAt = 0;
+    if (this.recorderState) {
+      this.recorderState.hasFirstFrame = true;
+      this.recorderState.switching = false;
+    }
+    this.clearStartupTimer();
     const detection = this.detectPitch(frameBuffer);
     if (!detection) {
       this.setData({
