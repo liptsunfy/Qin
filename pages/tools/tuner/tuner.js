@@ -249,6 +249,33 @@ Page({
     }, 120);
   },
 
+  startRecorderWithCurrentProfile() {
+    const profile = (this.recorderProfiles && this.recorderProfiles[this.data.recorderProfileIndex])
+      || { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true };
+    this.currentRecorderSampleRate = profile.sampleRate || 16000;
+    this.currentRecorderFormat = (profile.format || '').toLowerCase();
+
+    const startOptions = {
+      duration: 10 * 60 * 1000,
+      numberOfChannels: 1
+    };
+    if (profile.format) startOptions.format = profile.format;
+    if (profile.sampleRate) startOptions.sampleRate = profile.sampleRate;
+    if (profile.frameSize) startOptions.frameSize = profile.frameSize;
+    if (profile.useMic) startOptions.audioSource = 'mic';
+
+    this.setData({
+      statusText: `正在监听音高（${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz${profile.useMic ? '/mic' : ''}）…`,
+      statusLevel: 'listening'
+    });
+
+    try {
+      this.recorderManager.start(startOptions);
+    } catch (err) {
+      this.retryRecorderProfile(err);
+    }
+  },
+
   applyPreset(index) {
     const preset = this.data.tuningPresets[index];
     if (!preset) return;
@@ -416,6 +443,7 @@ Page({
           statusLevel: 'listening'
         });
         this.lastFrameAt = 0;
+        this.firstFrameDeadlineAt = Date.now() + 2200;
         this.frequencyHistory = [];
         this.stabilityHistory = [];
         this.startWithProfile(this.data.recorderProfileIndex || 0);
