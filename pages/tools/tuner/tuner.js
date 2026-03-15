@@ -334,6 +334,7 @@ Page({
           format: profile.format,
           sampleRate: profile.sampleRate,
           numberOfChannels: 1,
+          audioSource: 'mic',
           frameSize: profile.frameSize
         };
         if (profile.useMic) {
