@@ -55,11 +55,14 @@ Page({
 
   getRecorderProfiles() {
     // 按兼容性从高到低尝试：优先 PCM（可直接做音高分析），再降采样参数。
+    // 注意：微信录音 format 对大小写敏感，需使用 "PCM"，部分机型传 "pcm" 会直接 onError。
     return [
-      { format: 'pcm', sampleRate: 44100, frameSize: 8 },
-      { format: 'pcm', sampleRate: 32000, frameSize: 8 },
-      { format: 'pcm', sampleRate: 16000, frameSize: 5 },
-      { format: 'pcm', sampleRate: 16000, frameSize: 2 }
+      { format: 'PCM', sampleRate: 44100, frameSize: 8 },
+      { format: 'PCM', sampleRate: 32000, frameSize: 8 },
+      { format: 'PCM', sampleRate: 16000, frameSize: 5 },
+      { format: 'PCM', sampleRate: 16000, frameSize: 2 },
+      // 个别 Android 机型在 16k + 更大帧下更稳定
+      { format: 'PCM', sampleRate: 16000, frameSize: 10 }
     ];
   },
 
@@ -129,7 +132,7 @@ Page({
         });
       }
     });
-    this.recorderManager.onError(() => {
+    this.recorderManager.onError((err) => {
       const nextIndex = this.data.recorderProfileIndex + 1;
       if (this.data.isListening && this.recorderProfiles && nextIndex < this.recorderProfiles.length) {
         const profile = this.recorderProfiles[nextIndex];
@@ -143,7 +146,7 @@ Page({
       }
       this.stopListening();
       this.setData({
-        statusText: '录音失败：当前设备不支持实时录音调音',
+        statusText: `录音失败：当前设备录音参数不兼容（${(err && err.errMsg) || 'unknown'}）`,
         statusLevel: 'idle'
       });
     });
@@ -311,7 +314,7 @@ Page({
     this.ensureRecordPermission()
       .then(() => {
         const profile = (this.recorderProfiles && this.recorderProfiles[this.data.recorderProfileIndex])
-          || { format: 'pcm', sampleRate: 16000, frameSize: 5 };
+          || { format: 'PCM', sampleRate: 16000, frameSize: 5 };
         this.setData({
           isListening: true,
           statusText: `正在监听音高（${profile.format}/${profile.sampleRate}Hz）…`,
@@ -325,6 +328,7 @@ Page({
           format: profile.format,
           sampleRate: profile.sampleRate,
           numberOfChannels: 1,
+          audioSource: 'mic',
           frameSize: profile.frameSize
         });
         this.listenTimer = setInterval(() => {
