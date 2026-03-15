@@ -5,7 +5,10 @@
 
   <view class="card">
     <view wx:for="{{cities}}" wx:key="city" class="item" bindtap="onCityTap" data-city="{{item.city}}">
-      <text class="name">{{item.city}}</text>
+      <view>
+        <text class="name">{{item.city}}</text>
+        <text class="city-count">收录琴舍数量：{{(item.venues && item.venues.length) || 0}}</text>
+      </view>
       <text class="arrow">›</text>
     </view>
   </view>
