@@ -108,13 +108,80 @@ const QINSHE_DATA = [
 ];
 
 
+const DISTRICT_MAP = {
+  '北京市': ['东城区', '西城区', '朝阳区', '海淀区'],
+  '天津市': ['和平区', '河西区', '南开区', '滨海新区'],
+  '上海市': ['黄浦区', '徐汇区', '浦东新区', '闵行区'],
+  '重庆市': ['渝中区', '江北区', '南岸区', '渝北区'],
+  '石家庄市': ['长安区', '桥西区', '新华区', '裕华区'],
+  '保定市': ['竞秀区', '莲池区', '满城区', '清苑区'],
+  '太原市': ['小店区', '迎泽区', '杏花岭区', '万柏林区'],
+  '大同市': ['平城区', '云冈区', '新荣区', '云州区'],
+  '沈阳市': ['和平区', '沈河区', '皇姑区', '浑南区'],
+  '大连市': ['中山区', '西岗区', '沙河口区', '甘井子区'],
+  '长春市': ['南关区', '宽城区', '朝阳区', '二道区'],
+  '吉林市': ['船营区', '昌邑区', '丰满区', '龙潭区'],
+  '哈尔滨市': ['道里区', '道外区', '南岗区', '香坊区'],
+  '齐齐哈尔市': ['龙沙区', '建华区', '铁锋区', '昂昂溪区'],
+  '南京市': ['玄武区', '秦淮区', '鼓楼区', '江宁区'],
+  '苏州市': ['姑苏区', '虎丘区', '吴中区', '相城区'],
+  '杭州市': ['上城区', '拱墅区', '西湖区', '滨江区'],
+  '宁波市': ['海曙区', '江北区', '鄞州区', '镇海区'],
+  '合肥市': ['庐阳区', '蜀山区', '包河区', '瑶海区'],
+  '芜湖市': ['镜湖区', '弋江区', '鸠江区', '湾沚区'],
+  '福州市': ['鼓楼区', '台江区', '仓山区', '晋安区'],
+  '厦门市': ['思明区', '湖里区', '集美区', '海沧区'],
+  '南昌市': ['东湖区', '西湖区', '青云谱区', '红谷滩区'],
+  '赣州市': ['章贡区', '南康区', '赣县区', '信丰县'],
+  '济南市': ['历下区', '市中区', '槐荫区', '历城区'],
+  '青岛市': ['市南区', '市北区', '崂山区', '黄岛区'],
+  '郑州市': ['中原区', '二七区', '金水区', '郑东新区'],
+  '洛阳市': ['西工区', '老城区', '涧西区', '洛龙区'],
+  '武汉市': ['江岸区', '武昌区', '洪山区', '江汉区'],
+  '宜昌市': ['西陵区', '伍家岗区', '点军区', '夷陵区'],
+  '长沙市': ['芙蓉区', '天心区', '岳麓区', '开福区'],
+  '岳阳市': ['岳阳楼区', '云溪区', '君山区', '华容县'],
+  '广州市': ['越秀区', '天河区', '海珠区', '白云区'],
+  '深圳市': ['福田区', '罗湖区', '南山区', '宝安区'],
+  '海口市': ['秀英区', '龙华区', '琼山区', '美兰区'],
+  '三亚市': ['海棠区', '吉阳区', '天涯区', '崖州区'],
+  '成都市': ['锦江区', '青羊区', '武侯区', '高新区'],
+  '绵阳市': ['涪城区', '游仙区', '安州区', '江油市'],
+  '贵阳市': ['南明区', '云岩区', '花溪区', '观山湖区'],
+  '遵义市': ['红花岗区', '汇川区', '播州区', '仁怀市'],
+  '昆明市': ['五华区', '盘龙区', '官渡区', '西山区'],
+  '大理市': ['下关街道', '太和街道', '满江街道', '大理镇'],
+  '西安市': ['新城区', '碑林区', '莲湖区', '雁塔区'],
+  '宝鸡市': ['渭滨区', '金台区', '陈仓区', '凤翔区'],
+  '兰州市': ['城关区', '七里河区', '安宁区', '西固区'],
+  '天水市': ['秦州区', '麦积区', '甘谷县', '武山县'],
+  '西宁市': ['城东区', '城中区', '城西区', '城北区'],
+  '海东市': ['乐都区', '平安区', '民和县', '互助县'],
+  '台北市': ['中正区', '大安区', '信义区', '士林区'],
+  '台中市': ['中区', '西区', '北区', '南屯区'],
+  '呼和浩特市': ['新城区', '回民区', '玉泉区', '赛罕区'],
+  '南宁市': ['兴宁区', '青秀区', '江南区', '西乡塘区'],
+  '拉萨市': ['城关区', '堆龙德庆区', '达孜区', '林周县'],
+  '银川市': ['兴庆区', '金凤区', '西夏区', '永宁县'],
+  '乌鲁木齐市': ['天山区', '沙依巴克区', '新市区', '水磨沟区'],
+  '香港': ['中西区', '湾仔区', '九龙城区', '沙田区'],
+  '澳门': ['花地玛堂区', '圣安多尼堂区', '大堂区', '路氹填海区']
+};
+
+const QINSHE_DATA_WITH_DISTRICTS = QINSHE_DATA.map((provinceItem) => ({
+  ...provinceItem,
+  cities: (provinceItem.cities || []).map((cityItem) => ({
+    ...cityItem,
+    districts: cityItem.districts || DISTRICT_MAP[cityItem.city] || []
+  }))
+}));
 
 function searchVenues(keyword) {
   const normalized = String(keyword || '').trim().toLowerCase();
   if (!normalized) return [];
 
   const results = [];
-  QINSHE_DATA.forEach((provinceItem) => {
+  QINSHE_DATA_WITH_DISTRICTS.forEach((provinceItem) => {
     const province = provinceItem.province;
     (provinceItem.cities || []).forEach((cityItem) => {
       const city = cityItem.city;
@@ -141,11 +208,15 @@ function searchVenues(keyword) {
 }
 
 function getProvinceList() {
-  return QINSHE_DATA.map(item => ({ province: item.province, cityCount: (item.cities || []).length }));
+  return QINSHE_DATA_WITH_DISTRICTS.map((item) => ({
+    province: item.province,
+    cityCount: (item.cities || []).length,
+    venueCount: (item.cities || []).reduce((sum, city) => sum + ((city.venues || []).length), 0)
+  }));
 }
 
 function getCitiesByProvince(province) {
-  const item = QINSHE_DATA.find(p => p.province === province);
+  const item = QINSHE_DATA_WITH_DISTRICTS.find(p => p.province === province);
   return item ? item.cities : [];
 }
 
@@ -156,7 +227,7 @@ function getVenuesByProvinceAndCity(province, city) {
 }
 
 module.exports = {
-  QINSHE_DATA,
+  QINSHE_DATA: QINSHE_DATA_WITH_DISTRICTS,
   getProvinceList,
   getCitiesByProvince,
   getVenuesByProvinceAndCity,

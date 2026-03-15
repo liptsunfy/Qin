@@ -54,12 +54,21 @@ Page({
   },
 
   getRecorderProfiles() {
-    // 按兼容性从高到低尝试：优先 PCM（可直接做音高分析），再降采样参数。
+    // 底层兼容策略：先尝试可直接分析的 PCM/WAV，再降级采样率、帧长与音源参数。
+    // 部分机型对 format 大小写敏感，故同时覆盖 PCM/pcm；另有机型仅支持 wav。
     return [
-      { format: 'pcm', sampleRate: 44100, frameSize: 8 },
-      { format: 'pcm', sampleRate: 32000, frameSize: 8 },
-      { format: 'pcm', sampleRate: 16000, frameSize: 5 },
-      { format: 'pcm', sampleRate: 16000, frameSize: 2 }
+      { format: 'PCM', sampleRate: 48000, frameSize: 16, useMic: true },
+      { format: 'PCM', sampleRate: 44100, frameSize: 8, useMic: true },
+      { format: 'PCM', sampleRate: 32000, frameSize: 8, useMic: true },
+      { format: 'PCM', sampleRate: 16000, frameSize: 10, useMic: true },
+      { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true },
+      { format: 'pcm', sampleRate: 16000, frameSize: 5, useMic: true },
+      { format: 'wav', sampleRate: 16000, frameSize: 5, useMic: true },
+      { format: 'wav', sampleRate: 44100, frameSize: 8, useMic: true },
+      { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: false },
+      { format: 'pcm', sampleRate: 16000, frameSize: 2, useMic: false },
+      { format: 'wav', sampleRate: 16000, frameSize: 2, useMic: false },
+      { sampleRate: 16000, frameSize: 5, useMic: false }
     ];
   },
 
@@ -119,34 +128,125 @@ Page({
 
   setupRecorder() {
     this.recorderManager = wx.getRecorderManager();
+    this.recorderState = {
+      startToken: 0,
+      hasFirstFrame: false,
+      startupTimer: null,
+      switching: false
+    };
+
     this.recorderManager.onFrameRecorded(this.onFrameRecorded.bind(this));
     this.recorderManager.onStop(() => {
-      if (this.data.isListening) {
-        this.setData({
-          isListening: false,
-          statusText: '录音已停止',
-          statusLevel: 'idle'
-        });
-      }
-    });
-    this.recorderManager.onError(() => {
-      const nextIndex = this.data.recorderProfileIndex + 1;
-      if (this.data.isListening && this.recorderProfiles && nextIndex < this.recorderProfiles.length) {
-        const profile = this.recorderProfiles[nextIndex];
-        this.setData({
-          recorderProfileIndex: nextIndex,
-          statusText: `录音参数切换中（${profile.format}/${profile.sampleRate}Hz）…`,
-          statusLevel: 'listening'
-        });
-        this.startListening();
-        return;
-      }
-      this.stopListening();
+      if (!this.data.isListening) return;
+      // 避免切参过程中 stop 误触发最终失败
+      if (this.recorderState && this.recorderState.switching) return;
       this.setData({
-        statusText: '录音失败：当前设备不支持实时录音调音',
+        isListening: false,
+        statusText: '录音已停止',
         statusLevel: 'idle'
       });
     });
+    this.recorderManager.onError((err) => {
+      if (!this.data.isListening) return;
+      this.switchToNextProfile((err && err.errMsg) || 'onError');
+    });
+  },
+
+  clearStartupTimer() {
+    if (this.recorderState && this.recorderState.startupTimer) {
+      clearTimeout(this.recorderState.startupTimer);
+      this.recorderState.startupTimer = null;
+    }
+  },
+
+  buildStartOptions(profile) {
+    const options = {
+      duration: 10 * 60 * 1000,
+      numberOfChannels: 1,
+      sampleRate: profile.sampleRate || 16000,
+      frameSize: profile.frameSize || 5
+    };
+    if (profile.format) options.format = profile.format;
+    if (profile.useMic) options.audioSource = 'mic';
+    return options;
+  },
+
+  startWithProfile(index) {
+    if (!this.data.isListening) return;
+    const profile = (this.recorderProfiles && this.recorderProfiles[index]) || null;
+    if (!profile) {
+      this.setData({
+        isListening: false,
+        statusText: '录音失败：当前设备录音参数不兼容',
+        statusLevel: 'idle'
+      });
+      return;
+    }
+
+    const token = Date.now() + Math.floor(Math.random() * 1000);
+    this.recorderState.startToken = token;
+    this.recorderState.hasFirstFrame = false;
+    this.recorderState.switching = false;
+    this.clearStartupTimer();
+
+    this.currentRecorderSampleRate = profile.sampleRate || 16000;
+    this.currentRecorderFormat = (profile.format || '').toLowerCase();
+    this.setData({
+      recorderProfileIndex: index,
+      statusText: `正在监听音高（${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz${profile.useMic ? '/mic' : ''}）…`,
+      statusLevel: 'listening'
+    });
+
+    const startOptions = this.buildStartOptions(profile);
+    try {
+      this.recorderManager.start(startOptions);
+    } catch (err) {
+      this.switchToNextProfile((err && err.errMsg) || 'start throw');
+      return;
+    }
+
+    // 某些机型 start 不报错但永远不回帧：超时后自动切参数
+    this.recorderState.startupTimer = setTimeout(() => {
+      if (!this.data.isListening) return;
+      if (!this.recorderState || this.recorderState.startToken !== token) return;
+      if (!this.recorderState.hasFirstFrame) {
+        this.switchToNextProfile('start ok but no frame');
+      }
+    }, 2500);
+  },
+
+  switchToNextProfile(reason) {
+    if (!this.data.isListening || !this.recorderProfiles) return;
+    const nextIndex = this.data.recorderProfileIndex + 1;
+    if (nextIndex >= this.recorderProfiles.length) {
+      this.stopListening(false);
+      this.setData({
+        isListening: false,
+        statusText: `录音失败：当前设备录音参数不兼容（${reason}）`,
+        statusLevel: 'idle'
+      });
+      return;
+    }
+
+    const next = this.recorderProfiles[nextIndex];
+    this.recorderState.switching = true;
+    this.clearStartupTimer();
+    this.setData({
+      recorderProfileIndex: nextIndex,
+      statusText: `录音参数切换中（${next.format || 'default'}/${next.sampleRate || 'default'}Hz${next.useMic ? '/mic' : ''}）…`,
+      statusLevel: 'listening'
+    });
+
+    try {
+      this.recorderManager.stop();
+    } catch (e) {
+      // ignore stop race
+    }
+
+    setTimeout(() => {
+      if (!this.data.isListening) return;
+      this.startWithProfile(nextIndex);
+    }, 120);
   },
 
   applyPreset(index) {
@@ -310,26 +410,19 @@ Page({
     this.stopListening(false);
     this.ensureRecordPermission()
       .then(() => {
-        const profile = (this.recorderProfiles && this.recorderProfiles[this.data.recorderProfileIndex])
-          || { format: 'pcm', sampleRate: 16000, frameSize: 5 };
         this.setData({
           isListening: true,
-          statusText: `正在监听音高（${profile.format}/${profile.sampleRate}Hz）…`,
+          statusText: '正在启动录音…',
           statusLevel: 'listening'
         });
         this.lastFrameAt = 0;
         this.frequencyHistory = [];
         this.stabilityHistory = [];
-        this.currentRecorderSampleRate = profile.sampleRate;
-        this.recorderManager.start({
-          format: profile.format,
-          sampleRate: profile.sampleRate,
-          numberOfChannels: 1,
-          frameSize: profile.frameSize
-        });
+        this.startWithProfile(this.data.recorderProfileIndex || 0);
         this.listenTimer = setInterval(() => {
           const now = Date.now();
-          if (!this.lastFrameAt || now - this.lastFrameAt > 1200) {
+          if (!this.lastFrameAt) return;
+          if (now - this.lastFrameAt > 1200) {
             this.setData({
               tuningValue: 0,
               cents: 0,
@@ -360,6 +453,7 @@ Page({
       clearInterval(this.listenTimer);
       this.listenTimer = null;
     }
+    this.clearStartupTimer();
     if (this.recorderManager) {
       try {
         this.recorderManager.stop();
@@ -378,6 +472,11 @@ Page({
     this.recorderProfiles = this.getRecorderProfiles();
     this.frequencyHistory = [];
     this.stabilityHistory = [];
+    this.currentRecorderFormat = '';
+    if (this.recorderState) {
+      this.recorderState.hasFirstFrame = false;
+      this.recorderState.switching = false;
+    }
   },
 
   maybeAutoAdvance() {
@@ -509,6 +608,11 @@ Page({
     if (!this.data.isListening) return;
     const frameBuffer = res && res.frameBuffer;
     if (!frameBuffer) return;
+    if (this.recorderState) {
+      this.recorderState.hasFirstFrame = true;
+      this.recorderState.switching = false;
+    }
+    this.clearStartupTimer();
     const detection = this.detectPitch(frameBuffer);
     if (!detection) {
       this.setData({
@@ -560,8 +664,8 @@ Page({
 
   detectPitch(buffer) {
     if (!buffer) return null;
-    const data = new Int16Array(buffer);
-    if (!data.length) return null;
+    const data = this.toInt16Samples(buffer, this.currentRecorderFormat);
+    if (!data || !data.length) return null;
     const sampleRate = this.currentRecorderSampleRate || 16000;
     const floatBuffer = new Float32Array(data.length);
     let rms = 0;
@@ -581,6 +685,24 @@ Page({
     const volume = Math.min(100, Math.round(rms * 220));
     const stability = Math.min(100, Math.round(result.confidence * 100));
     return { frequency: result.frequency, volume, stability };
+  },
+
+
+  toInt16Samples(buffer, format) {
+    if (!buffer) return null;
+    let offset = 0;
+    // wav 帧可能包含头部，跳过 RIFF/WAVE 头后再按 PCM16 读取。
+    if (format === 'wav' && buffer.byteLength >= 44) {
+      const header = new Uint8Array(buffer, 0, 4);
+      if (header[0] === 82 && header[1] === 73 && header[2] === 70 && header[3] === 70) {
+        offset = 44;
+      }
+    }
+    const remain = buffer.byteLength - offset;
+    if (remain <= 2) return null;
+    const aligned = remain - (remain % 2);
+    if (aligned <= 0) return null;
+    return new Int16Array(buffer.slice(offset, offset + aligned));
   },
 
   smoothFrequency(frequency) {
