@@ -67,7 +67,8 @@ Page({
       { format: 'wav', sampleRate: 44100, frameSize: 8, useMic: true },
       { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: false },
       { format: 'pcm', sampleRate: 16000, frameSize: 2, useMic: false },
-      { format: 'wav', sampleRate: 16000, frameSize: 2, useMic: false }
+      { format: 'wav', sampleRate: 16000, frameSize: 2, useMic: false },
+      { sampleRate: 16000, frameSize: 5, useMic: false }
     ];
   },
 
@@ -138,23 +139,64 @@ Page({
       }
     });
     this.recorderManager.onError((err) => {
-      const nextIndex = this.data.recorderProfileIndex + 1;
-      if (this.data.isListening && this.recorderProfiles && nextIndex < this.recorderProfiles.length) {
-        const profile = this.recorderProfiles[nextIndex];
-        this.setData({
-          recorderProfileIndex: nextIndex,
-          statusText: `录音参数切换中（${profile.format}/${profile.sampleRate}Hz${profile.useMic ? '/mic' : ''}）…`,
-          statusLevel: 'listening'
-        });
-        this.startListening();
-        return;
-      }
-      this.stopListening();
-      this.setData({
-        statusText: `录音失败：当前设备录音参数不兼容（${(err && err.errMsg) || 'unknown'}）`,
-        statusLevel: 'idle'
-      });
+      this.retryRecorderProfile(err);
     });
+  },
+
+
+  retryRecorderProfile(err) {
+    const nextIndex = this.data.recorderProfileIndex + 1;
+    if (this.data.isListening && this.recorderProfiles && nextIndex < this.recorderProfiles.length) {
+      const profile = this.recorderProfiles[nextIndex];
+      this.setData({
+        recorderProfileIndex: nextIndex,
+        statusText: `录音参数切换中（${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz${profile.useMic ? '/mic' : ''}）…`,
+        statusLevel: 'listening'
+      });
+      try {
+        this.recorderManager.stop();
+      } catch (e) {
+        // ignore
+      }
+      setTimeout(() => {
+        if (this.data.isListening) {
+          this.startRecorderWithCurrentProfile();
+        }
+      }, 80);
+      return;
+    }
+    this.stopListening();
+    this.setData({
+      statusText: `录音失败：当前设备录音参数不兼容（${(err && err.errMsg) || 'unknown'}）`,
+      statusLevel: 'idle'
+    });
+  },
+
+  startRecorderWithCurrentProfile() {
+    const profile = (this.recorderProfiles && this.recorderProfiles[this.data.recorderProfileIndex])
+      || { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true };
+    this.currentRecorderSampleRate = profile.sampleRate || 16000;
+    this.currentRecorderFormat = (profile.format || '').toLowerCase();
+
+    const startOptions = {
+      duration: 10 * 60 * 1000,
+      numberOfChannels: 1
+    };
+    if (profile.format) startOptions.format = profile.format;
+    if (profile.sampleRate) startOptions.sampleRate = profile.sampleRate;
+    if (profile.frameSize) startOptions.frameSize = profile.frameSize;
+    if (profile.useMic) startOptions.audioSource = 'mic';
+
+    this.setData({
+      statusText: `正在监听音高（${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz${profile.useMic ? '/mic' : ''}）…`,
+      statusLevel: 'listening'
+    });
+
+    try {
+      this.recorderManager.start(startOptions);
+    } catch (err) {
+      this.retryRecorderProfile(err);
+    }
   },
 
   applyPreset(index) {
@@ -318,33 +360,26 @@ Page({
     this.stopListening(false);
     this.ensureRecordPermission()
       .then(() => {
-        const profile = (this.recorderProfiles && this.recorderProfiles[this.data.recorderProfileIndex])
-          || { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true };
         this.setData({
           isListening: true,
-          statusText: `正在监听音高（${profile.format}/${profile.sampleRate}Hz）…`,
+          statusText: '正在启动录音…',
           statusLevel: 'listening'
         });
         this.lastFrameAt = 0;
+        this.firstFrameDeadlineAt = Date.now() + 2200;
         this.frequencyHistory = [];
         this.stabilityHistory = [];
-        this.currentRecorderSampleRate = profile.sampleRate;
-        this.currentRecorderFormat = (profile.format || '').toLowerCase();
-        const startOptions = {
-          duration: 10 * 60 * 1000,
-          format: profile.format,
-          sampleRate: profile.sampleRate,
-          numberOfChannels: 1,
-          audioSource: 'mic',
-          frameSize: profile.frameSize
-        };
-        if (profile.useMic) {
-          startOptions.audioSource = 'mic';
-        }
-        this.recorderManager.start(startOptions);
+        this.startRecorderWithCurrentProfile();
         this.listenTimer = setInterval(() => {
           const now = Date.now();
-          if (!this.lastFrameAt || now - this.lastFrameAt > 1200) {
+          if (!this.lastFrameAt) {
+            if (this.firstFrameDeadlineAt && now > this.firstFrameDeadlineAt) {
+              this.retryRecorderProfile({ errMsg: 'start ok but no frame data' });
+              this.firstFrameDeadlineAt = now + 2200;
+            }
+            return;
+          }
+          if (now - this.lastFrameAt > 1200) {
             this.setData({
               tuningValue: 0,
               cents: 0,
@@ -394,6 +429,7 @@ Page({
     this.frequencyHistory = [];
     this.stabilityHistory = [];
     this.currentRecorderFormat = "";
+    this.firstFrameDeadlineAt = 0;
   },
 
   maybeAutoAdvance() {
@@ -525,6 +561,7 @@ Page({
     if (!this.data.isListening) return;
     const frameBuffer = res && res.frameBuffer;
     if (!frameBuffer) return;
+    this.firstFrameDeadlineAt = 0;
     const detection = this.detectPitch(frameBuffer);
     if (!detection) {
       this.setData({
