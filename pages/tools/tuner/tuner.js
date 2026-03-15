@@ -54,15 +54,21 @@ Page({
   },
 
   getRecorderProfiles() {
-    // 按兼容性从高到低尝试：优先 PCM（可直接做音高分析），再降采样参数。
-    // 注意：微信录音 format 对大小写敏感，需使用 "PCM"，部分机型传 "pcm" 会直接 onError。
+    // 按兼容性从高到低尝试：不同微信基础库/ROM 对 format 大小写、audioSource 支持不一致。
+    // 这里组合尝试，避免在部分真机上全部参数一次性失败。
     return [
-      { format: 'PCM', sampleRate: 44100, frameSize: 8 },
-      { format: 'PCM', sampleRate: 32000, frameSize: 8 },
-      { format: 'PCM', sampleRate: 16000, frameSize: 5 },
-      { format: 'PCM', sampleRate: 16000, frameSize: 2 },
-      // 个别 Android 机型在 16k + 更大帧下更稳定
-      { format: 'PCM', sampleRate: 16000, frameSize: 10 }
+      { format: 'PCM', sampleRate: 44100, frameSize: 8, useMic: true },
+      { format: 'PCM', sampleRate: 44100, frameSize: 8, useMic: false },
+      { format: 'PCM', sampleRate: 32000, frameSize: 8, useMic: true },
+      { format: 'PCM', sampleRate: 32000, frameSize: 8, useMic: false },
+      { format: 'PCM', sampleRate: 16000, frameSize: 10, useMic: true },
+      { format: 'PCM', sampleRate: 16000, frameSize: 10, useMic: false },
+      { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true },
+      { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: false },
+      { format: 'pcm', sampleRate: 16000, frameSize: 5, useMic: true },
+      { format: 'pcm', sampleRate: 16000, frameSize: 5, useMic: false },
+      { format: 'pcm', sampleRate: 16000, frameSize: 2, useMic: true },
+      { format: 'pcm', sampleRate: 16000, frameSize: 2, useMic: false }
     ];
   },
 
@@ -138,7 +144,7 @@ Page({
         const profile = this.recorderProfiles[nextIndex];
         this.setData({
           recorderProfileIndex: nextIndex,
-          statusText: `录音参数切换中（${profile.format}/${profile.sampleRate}Hz）…`,
+          statusText: `录音参数切换中（${profile.format}/${profile.sampleRate}Hz${profile.useMic ? '/mic' : ''}）…`,
           statusLevel: 'listening'
         });
         this.startListening();
@@ -314,7 +320,7 @@ Page({
     this.ensureRecordPermission()
       .then(() => {
         const profile = (this.recorderProfiles && this.recorderProfiles[this.data.recorderProfileIndex])
-          || { format: 'PCM', sampleRate: 16000, frameSize: 5 };
+          || { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true };
         this.setData({
           isListening: true,
           statusText: `正在监听音高（${profile.format}/${profile.sampleRate}Hz）…`,
@@ -324,13 +330,17 @@ Page({
         this.frequencyHistory = [];
         this.stabilityHistory = [];
         this.currentRecorderSampleRate = profile.sampleRate;
-        this.recorderManager.start({
+        const startOptions = {
           format: profile.format,
           sampleRate: profile.sampleRate,
           numberOfChannels: 1,
           audioSource: 'mic',
           frameSize: profile.frameSize
-        });
+        };
+        if (profile.useMic) {
+          startOptions.audioSource = 'mic';
+        }
+        this.recorderManager.start(startOptions);
         this.listenTimer = setInterval(() => {
           const now = Date.now();
           if (!this.lastFrameAt || now - this.lastFrameAt > 1200) {
