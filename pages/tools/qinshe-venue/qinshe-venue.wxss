@@ -1,0 +1,8 @@
+.page { padding:24rpx; background:#f7f8fa; min-height:100vh; }
+.card { background:#fff; border-radius:20rpx; padding:24rpx; margin-bottom:20rpx; }
+.title { display:block; font-size:34rpx; font-weight:600; color:#222; margin-bottom:10rpx; }
+.desc { display:block; font-size:25rpx; color:#666; }
+.venue-name { display:block; font-size:30rpx; font-weight:600; color:#1f2f55; margin-bottom:12rpx; }
+.line { display:block; font-size:25rpx; color:#666; line-height:1.7; }
+.copy { display:inline-block; margin-top:14rpx; color:#4f6aa3; font-size:24rpx; }
+.empty { color:#888; font-size:24rpx; }

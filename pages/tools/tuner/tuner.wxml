@@ -1,0 +1,107 @@
+<view class="tuner-page">
+  <view class="card hero">
+    <text class="hero-title">调音器</text>
+  </view>
+
+  <view class="card settings-card">
+    <view class="setting-row">
+      <text class="setting-label">曲调</text>
+      <picker
+        class="setting-value picker"
+        mode="selector"
+        range="{{tuningPresetNames}}"
+        value="{{currentPresetIndex}}"
+        bindchange="onPresetChange"
+      >
+        <view class="picker-content">
+          <text>{{tuningPresetNames[currentPresetIndex]}}</text>
+          <text class="setting-desc">{{tuningPresets[currentPresetIndex] ? tuningPresets[currentPresetIndex].description : ''}}</text>
+        </view>
+      </picker>
+    </view>
+    <view class="setting-row compact">
+      <text class="setting-label">基准音 A4</text>
+      <view class="setting-input">
+        <text class="setting-fixed-value">440 Hz</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card status-card" wx:if="{{strings.length}}">
+    <view class="status-header">
+      <view class="status-main">
+        <text class="status-string">{{currentString ? currentString.name : ''}}</text>
+        <text class="status-note">{{currentString ? currentString.note : ''}}{{currentString ? currentString.octave : ''}}</text>
+      </view>
+      <view class="status-actions">
+        <switch checked="{{autoTune}}" bindchange="onAutoTuneToggle" />
+        <text class="status-toggle">自动换弦</text>
+      </view>
+    </view>
+    <view class="status-meta">
+      <text>目标 {{targetFrequencyText}} Hz</text>
+      <text wx:if="{{currentFrequency > 0}}">当前 {{currentFrequencyText}} Hz</text>
+    </view>
+    <view class="status-meta">
+      <text>偏差 {{cents}} cents</text>
+      <text>音量 {{volume}}</text>
+      <text>稳定度 {{stability}}%</text>
+    </view>
+    <view class="status-meta">
+      <text>监听参数 {{activeProfileText}}</text>
+      <text>帧间隔 {{frameInterval || 0}} ms</text>
+    </view>
+
+    <view class="dial-wrap">
+      <view class="dial-label-row">
+        <text class="dial-caption low">偏低</text>
+        <text class="dial-caption center">标准</text>
+        <text class="dial-caption high">偏高</text>
+      </view>
+      <view class="bar-wrap">
+        <view class="bar-zone low"></view>
+        <view class="bar-zone center"></view>
+        <view class="bar-zone high"></view>
+        <view class="bar-center-line"></view>
+        <view class="bar-pointer" style="left: {{pointerPercent}}%;"></view>
+      </view>
+      <view class="dial-value">{{cents}}c</view>
+      <view class="dial-target">目标 {{currentString ? currentString.note : "--"}}{{currentString ? currentString.octave : ""}} · {{currentString ? currentString.frequency.toFixed(1) : "--"}}Hz</view>
+      <view class="dial-scale-text">
+        <text>-50</text>
+        <text>-25</text>
+        <text>0</text>
+        <text>+25</text>
+        <text>+50</text>
+      </view>
+    </view>
+
+    <view class="status-pill {{statusLevel}}">
+      <text>{{statusText}}</text>
+    </view>
+    <view class="status-buttons">
+      <button class="primary" bindtap="onToggleListen">{{isListening ? '停止监听' : '开始监听'}}</button>
+      <button class="ghost" bindtap="toggleReferenceTone">{{isTonePlaying ? '停止参考音' : '播放参考音'}}</button>
+      <button class="ghost" bindtap="onMarkTuned">标记已调准</button>
+    </view>
+  </view>
+
+  <view class="card compact-card">
+    <view class="section-header">
+      <text class="section-title">弦位列表</text>
+      <text class="section-action" bindtap="onResetTuned">重置</text>
+    </view>
+    <view class="string-grid compact">
+      <view wx:for="{{strings}}" wx:key="id" class="string-item compact {{index === currentStringIndex ? 'active' : ''}}" bindtap="onStringTap" data-index="{{index}}">
+        <view class="string-top-row">
+          <text class="string-name">{{item.name}}</text>
+          <text class="string-status {{item.tuned ? 'tuned' : ''}}">{{item.tuned ? '已调准' : '待调音'}}</text>
+        </view>
+        <view class="string-meta-row">
+          <text class="string-note">{{item.note}}{{item.octave}}</text>
+          <text class="string-frequency">{{item.frequencyText}} Hz</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

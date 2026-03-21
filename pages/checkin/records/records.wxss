@@ -1,0 +1,59 @@
+.page{padding:16rpx;background:linear-gradient(180deg,#f6f2eb 0%,#f8f8f8 220rpx);min-height:100vh;box-sizing:border-box}
+.card{background:#fff;border-radius:24rpx;padding:24rpx;margin-bottom:16rpx;box-shadow:0 10rpx 28rpx rgba(53,39,25,0.06)}
+.header{padding-bottom:18rpx}
+.title{font-size:36rpx;font-weight:600;color:#222}
+.segmented{margin-top:18rpx;display:flex;gap:12rpx}
+.seg-item{flex:1;text-align:center;padding:14rpx 0;border-radius:18rpx;background:#f2f2f2;color:#333;font-size:26rpx}
+.seg-item.active{background:#111;color:#fff}
+.range-text{margin-top:14rpx;font-size:24rpx;color:#666}
+.section-title{font-size:30rpx;font-weight:600;color:#222;margin-bottom:16rpx}
+.stats-grid{display:flex;flex-wrap:wrap;gap:12rpx}
+.stat{width:calc(50% - 6rpx);background:linear-gradient(180deg,#fff 0%,#fbf8f3 100%);border:1rpx solid #f0e7da;border-radius:18rpx;padding:18rpx 16rpx;box-sizing:border-box}
+.stat-value{font-size:32rpx;font-weight:700;color:#2f2922}
+.stat-label{margin-top:8rpx;font-size:22rpx;color:#7a6d5d}
+.note{margin-top:18rpx}
+.note-title{font-size:24rpx;color:#444;margin-bottom:12rpx}
+.bar-list{display:flex;flex-direction:column;gap:14rpx}
+.bar-item{display:flex;align-items:center;gap:12rpx}
+.bar-label{font-size:24rpx;color:#222;min-width:170rpx}
+.bar-track{flex:1;height:18rpx;background:#f0f0f0;border-radius:999rpx;overflow:hidden}
+.bar-fill{height:100%;background:#111;border-radius:999rpx}
+.bar-track.is-soft{background:#f6f2ee}
+.bar-fill.is-soft{background:#b18a5a}
+.bar-value{font-size:22rpx;color:#666;min-width:70rpx;text-align:right}
+.new-song-list{display:flex;flex-direction:column;gap:12rpx}
+.new-song-item{display:flex;justify-content:space-between;align-items:center;padding:10rpx 12rpx;border-radius:14rpx;background:#fafafa}
+.new-song-name{font-size:24rpx;color:#222}
+.new-song-date{font-size:22rpx;color:#888}
+.chart-legend{display:flex;gap:20rpx;align-items:center;margin-bottom:12rpx}
+.legend-item{display:flex;gap:10rpx;align-items:center;font-size:22rpx;color:#666}
+.dot{width:14rpx;height:14rpx;border-radius:999rpx;background:#111}
+.dash{width:30rpx;height:4rpx;background:repeating-linear-gradient(90deg,#111, #111 12rpx, transparent 12rpx, transparent 20rpx);border-radius:999rpx}
+.chart-wrap{background:#fafafa;border-radius:18rpx;padding:16rpx}
+.axis-hint{margin-top:10rpx;font-size:22rpx;color:#888}
+.empty{padding:18rpx 0;color:#888;font-size:24rpx}
+.row{display:flex;justify-content:space-between;padding:12rpx 0;border-bottom:1rpx solid #f0f0f0}
+.row:last-child{border-bottom:0}
+.row-left{color:#222;font-size:24rpx}
+.row-right{color:#111;font-size:24rpx;font-weight:600}
+.record-group{padding:12rpx 0;border-bottom:1rpx solid #f0ede9}
+.record-group:last-child{border-bottom:0}
+.record-date{display:block;font-size:26rpx;font-weight:600;color:#3a3026;margin-bottom:12rpx}
+.record-item{padding:10rpx 12rpx;border-top:1rpx dashed #ece5dc;background:#fcfaf7;border-radius:14rpx;margin-bottom:8rpx}
+.record-item:first-child{border-top:0}
+.record-item-main{display:flex;gap:16rpx;align-items:center}
+.record-item-main.compact{margin-bottom:4rpx}
+.record-song{font-size:26rpx;color:#2f2922;flex:1}
+.record-meta-row{display:flex;flex-wrap:wrap;gap:8rpx 14rpx;align-items:center}
+.record-time{font-size:22rpx;color:#9a8f83}
+.record-duration{display:block;font-size:22rpx;color:#5f5549}
+.record-repeat{display:block;font-size:22rpx;color:#7f7366}
+.record-notes{display:block;font-size:22rpx;color:#6c6359;background:#f5efe8;border-radius:12rpx;padding:10rpx 12rpx;margin-top:8rpx;line-height:1.5}
+.record-notes-hint{display:block;font-size:20rpx;color:#9a8f83;margin-top:4rpx}
+.filter{margin-bottom:16rpx}
+.filter-label{font-size:24rpx;color:#444}
+.filter-row{display:flex;align-items:center;gap:12rpx;margin-top:12rpx}
+.filter-box{padding:10rpx 14rpx;border-radius:16rpx;background:#f4efe8;font-size:24rpx;color:#3f352c}
+.filter-sep{font-size:24rpx;color:#666}
+.filter-reset{padding:10rpx 16rpx;border-radius:16rpx;background:#5d4b38;color:#fff;font-size:24rpx}
+.filter-hint{display:block;margin-top:10rpx;font-size:22rpx;color:#888}

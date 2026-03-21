@@ -1,0 +1,19 @@
+.page { padding: 24rpx; background:#f7f8fa; min-height:100vh; }
+.card { background:#fff; border-radius:20rpx; padding:24rpx; margin-bottom:20rpx; }
+.title { display:block; font-size:36rpx; font-weight:600; color:#222; }
+.notice { display:block; margin-top:10rpx; font-size:24rpx; color:#666; line-height:1.6; }
+.search-card { display:flex; align-items:center; gap:16rpx; }
+.search-input { flex:1; height:72rpx; background:#f3f5f8; border-radius:14rpx; padding:0 20rpx; font-size:26rpx; color:#333; }
+.clear { font-size:24rpx; color:#4f6aa3; }
+.result-title { display:block; font-size:26rpx; color:#4f6aa3; margin-bottom:10rpx; }
+.result-item { position:relative; padding:14rpx 38rpx 14rpx 0; border-bottom:1rpx solid #f1f1f1; }
+.result-item:last-child { border-bottom:none; }
+.result-name { display:block; font-size:28rpx; color:#1f2f55; font-weight:600; }
+.result-meta, .result-contact { display:block; margin-top:4rpx; font-size:23rpx; color:#666; }
+.item { display:flex; align-items:center; justify-content:space-between; padding:18rpx 0; border-bottom:1rpx solid #f1f1f1; }
+.item:last-child { border-bottom:none; }
+.name { display:block; font-size:29rpx; color:#222; }
+.sub { display:block; margin-top:6rpx; font-size:23rpx; color:#888; }
+.result-item .arrow { position:absolute; right:0; top:50%; transform:translateY(-50%); font-size:34rpx; color:#bbb; }
+.item .arrow { position:static; transform:none; font-size:34rpx; color:#bbb; }
+.empty { color:#888; font-size:24rpx; }

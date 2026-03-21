@@ -1,0 +1,16 @@
+<view class="page">
+  <view class="card hero">
+    <text class="title">{{province}} · {{city}}</text>
+  </view>
+
+  <view wx:for="{{venues}}" wx:key="name" class="card venue-card">
+    <text class="venue-name">{{item.name}}</text>
+    <text class="line">联系方式：{{item.contact}}</text>
+    <text class="line">简介：{{item.intro}}</text>
+    <text class="line">详情链接：{{item.link}}</text>
+  </view>
+
+  <view wx:if="{{venues.length === 0}}" class="card empty">
+    <text>当前城市暂无示例琴馆信息。</text>
+  </view>
+</view>

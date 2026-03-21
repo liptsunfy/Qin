@@ -1,0 +1,42 @@
+<view class="page">
+  <view class="hero card">
+    <view class="hero-top">
+      <view>
+        <text class="eyebrow">关于</text>
+        <text class="title">古琴助手</text>
+        <text class="subtitle">一款面向古琴学习者的打卡与辅助工具小程序。</text>
+      </view>
+      <view class="version-badge">v{{version}}</view>
+    </view>
+
+    <view class="highlight-grid">
+      <view wx:for="{{highlights}}" wx:key="label" class="highlight-item">
+        <text class="highlight-label">{{item.label}}</text>
+        <text class="highlight-value">{{item.value}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:for="{{sections}}" wx:key="title" class="card section-card">
+    <text class="section-title">{{item.title}}</text>
+    <view wx:if="{{item.paragraphs}}" class="paragraph-group">
+      <text wx:for="{{item.paragraphs}}" wx:key="*this" class="paragraph">{{item}}</text>
+    </view>
+    <view wx:if="{{item.bullets}}" class="bullet-list">
+      <view wx:for="{{item.bullets}}" wx:key="*this" class="bullet-item">
+        <text class="bullet-dot">•</text>
+        <text class="bullet-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card section-card">
+    <text class="section-title">关于我们</text>
+    <view class="info-row"><text class="label">当前版本</text><text class="value">{{version}}</text></view>
+    <view class="info-row"><text class="label">开发者</text><text class="value">FY, BA4SGP</text></view>
+    <view class="info-row"><text class="label">数据存储</text><text class="value">默认保存在本地设备</text></view>
+    <view class="info-row"><text class="label">联系我们</text><text class="value">敬请关注公众号【鹿鸣琴室】</text></view>
+  </view>
+
+  <view class="footer-copy">copyright©sunli. 2026</view>
+</view>
