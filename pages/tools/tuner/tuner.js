@@ -94,19 +94,24 @@ Page({
   },
 
   getRecorderProfiles() {
-    // 优先采用更适合实时音高检测的采样参数：44.1k / 22.05k，
-    // 分析窗分别对应 4096 / 2048 点，并使用 50% overlap。
+    // 按“高精度优先、广兼容兜底”排列。
+    // 部分机型不接受 audioSource='mic'、大采样率或显式 format，
+    // 因此同时准备带/不带 mic、带/不带 format 的多组参数。
     return [
       { format: 'PCM', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'PCM', sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
       { format: 'pcm', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'pcm', sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
       { format: 'wav', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
+      { sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
+      { format: 'PCM', sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
+      { format: 'pcm', sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
       { format: 'wav', sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'PCM', sampleRate: 44100, frameSize: 8, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { format: 'pcm', sampleRate: 44100, frameSize: 8, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
+      { sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
       { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { sampleRate: 16000, frameSize: 5, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 }
+      { sampleRate: 16000, frameSize: 5, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
+      { sampleRate: 44100, frameSize: 4, analysisWindowSize: 2048, analysisHopSize: 1024 },
+      { sampleRate: 22050, frameSize: 4, analysisWindowSize: 2048, analysisHopSize: 1024 },
+      { sampleRate: 16000, frameSize: 5, analysisWindowSize: 2048, analysisHopSize: 1024 },
+      { sampleRate: 16000, frameSize: 2, analysisWindowSize: 1024, analysisHopSize: 512 }
     ];
   },
 
@@ -165,16 +170,23 @@ Page({
   },
 
   setupRecorder() {
+    if (!wx.getRecorderManager) {
+      this.recorderManager = null;
+      return;
+    }
     this.recorderManager = wx.getRecorderManager();
     this.recorderState = {
       startToken: 0,
       hasFirstFrame: false,
       startupTimer: null,
       switching: false,
-      retryRound: 0
+      retryRound: 0,
+      frameSupported: typeof this.recorderManager.onFrameRecorded === 'function'
     };
 
-    this.recorderManager.onFrameRecorded(this.onFrameRecorded.bind(this));
+    if (this.recorderState.frameSupported) {
+      this.recorderManager.onFrameRecorded(this.onFrameRecorded.bind(this));
+    }
     this.recorderManager.onStop(() => {
       if (!this.data.isListening) return;
       // 避免切参过程中 stop 误触发最终失败
@@ -341,17 +353,6 @@ Page({
       currentString,
       targetFrequencyText: currentString ? currentString.frequencyText : '--'
     });
-
-    try {
-      this.recorderManager.stop();
-    } catch (e) {
-      // ignore stop race
-    }
-
-    setTimeout(() => {
-      if (!this.data.isListening) return;
-      this.startWithProfile(nextIndex);
-    }, 120);
   },
 
   applyPreset(index) {
@@ -519,6 +520,22 @@ Page({
 
   startListening() {
     this.stopListening(false);
+    if (!this.recorderManager) {
+      this.setData({
+        isListening: false,
+        statusText: '当前设备不支持录音能力',
+        statusLevel: 'idle'
+      });
+      return;
+    }
+    if (!this.recorderState || !this.recorderState.frameSupported) {
+      this.setData({
+        isListening: false,
+        statusText: '当前设备暂不支持实时音高监听',
+        statusLevel: 'idle'
+      });
+      return;
+    }
     this.ensureRecordPermission()
       .then(() => {
         this.setData({
