@@ -759,9 +759,10 @@ Page({
     }
 
     const yinResult = this.detectPitchWithYin(floatBuffer, sampleRate, 45, 1000, targetFrequency);
-    const wideBand = (!yinResult || yinResult.confidence < 0.72)
+    const wideBand = (!yinResult || yinResult.confidence < 0.45)
       ? this.detectPitchWithAutoCorrelation(floatBuffer, sampleRate, 45, 1000)
       : { frequency: 0, clarity: 0 };
+    const zeroCrossFrequency = this.estimateFrequencyFromZeroCrossings(floatBuffer, sampleRate);
 
     let rawFrequency = yinResult && yinResult.frequency > 0 ? yinResult.frequency : 0;
     let confidence = yinResult ? (yinResult.confidence || 0) : 0;
@@ -769,17 +770,22 @@ Page({
     if (wideBand && wideBand.frequency > 0) {
       const yinDistance = rawFrequency ? Math.abs(this.frequencyToCents(this.calibrateToTargetOctave(rawFrequency, targetFrequency), targetFrequency)) : Infinity;
       const acDistance = Math.abs(this.frequencyToCents(this.calibrateToTargetOctave(wideBand.frequency, targetFrequency), targetFrequency));
-      if (!rawFrequency || (wideBand.clarity || 0) > confidence + 0.08 || acDistance + 8 < yinDistance) {
+      if (!rawFrequency || (wideBand.clarity || 0) > confidence + 0.05 || acDistance + 10 < yinDistance) {
         rawFrequency = wideBand.frequency;
       }
       confidence = Math.max(confidence, wideBand.clarity || 0);
     }
 
-    const volume = Math.min(100, Math.round(rms * 420));
+    if ((!rawFrequency || confidence < 0.24) && zeroCrossFrequency > 0) {
+      rawFrequency = rawFrequency || zeroCrossFrequency;
+      confidence = Math.max(confidence, 0.22);
+    }
+
+    const volume = Math.min(100, Math.round(rms * 380));
     const stability = rawFrequency > 0
       ? Math.max(12, Math.min(100, Math.round(confidence * 100)))
       : 0;
-    const hasStablePitch = rawFrequency > 0 && confidence >= 0.58;
+    const hasStablePitch = rawFrequency > 0 && confidence >= 0.3;
 
     return {
       hasSignal: true,
@@ -924,12 +930,13 @@ Page({
   },
 
   getSilenceThreshold(rms) {
+    const seedFloor = 0.0002;
     if (!this.noiseFloorRms || !Number.isFinite(this.noiseFloorRms)) {
-      this.noiseFloorRms = rms;
-    } else if (rms < this.noiseFloorRms * 1.6) {
-      this.noiseFloorRms = this.noiseFloorRms * 0.92 + rms * 0.08;
+      this.noiseFloorRms = Math.min(Math.max(rms * 0.35, seedFloor), 0.0012);
+    } else if (rms <= Math.max(0.003, this.noiseFloorRms * 3)) {
+      this.noiseFloorRms = this.noiseFloorRms * 0.95 + Math.min(rms, 0.0035) * 0.05;
     }
-    return Math.max(0.001, (this.noiseFloorRms || 0.001) * 2.1);
+    return Math.max(0.00045, Math.min(0.0022, (this.noiseFloorRms || seedFloor) * 1.8 + 0.00012));
   },
 
   detectPitchWithAutoCorrelation(buffer, sampleRate, minFreq = 45, maxFreq = 1600) {
