@@ -94,19 +94,19 @@ Page({
   },
 
   getRecorderProfiles() {
-    // 优先采用更适合实时音高检测的采样参数：44.1k / 22.05k，
-    // 分析窗分别对应 4096 / 2048 点，并使用 50% overlap。
+    // 录音启动参数按“16000Hz / 48kbps 优先，44100Hz / 96kbps 高精度回退”排列。
+    // 对古琴 65~150Hz 的基频识别来说，16k 已足够；同时保留更高采样率供新设备尝试。
     return [
-      { format: 'PCM', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'PCM', sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'pcm', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'pcm', sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'wav', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'wav', sampleRate: 22050, frameSize: 4, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { format: 'PCM', sampleRate: 44100, frameSize: 8, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { format: 'pcm', sampleRate: 44100, frameSize: 8, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 },
-      { sampleRate: 16000, frameSize: 5, useMic: true, analysisWindowSize: 2048, analysisHopSize: 1024 }
+      { sampleRate: 16000, encodeBitRate: 48000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
+      { sampleRate: 16000, encodeBitRate: 48000, frameSize: 5, analysisWindowSize: 4096, analysisHopSize: 512 },
+      { format: 'pcm', sampleRate: 16000, encodeBitRate: 48000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
+      { sampleRate: 16000, encodeBitRate: 64000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
+      { sampleRate: 16000, encodeBitRate: 48000, frameSize: 8, useMic: true, analysisWindowSize: 8192, analysisHopSize: 1024 },
+      { sampleRate: 16000, encodeBitRate: 48000, frameSize: 8, analysisWindowSize: 8192, analysisHopSize: 1024 },
+      { sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
+      { sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, analysisWindowSize: 4096, analysisHopSize: 2048 },
+      { format: 'pcm', sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
+      { format: 'wav', sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 }
     ];
   },
 
@@ -165,16 +165,23 @@ Page({
   },
 
   setupRecorder() {
+    if (!wx.getRecorderManager) {
+      this.recorderManager = null;
+      return;
+    }
     this.recorderManager = wx.getRecorderManager();
     this.recorderState = {
       startToken: 0,
       hasFirstFrame: false,
       startupTimer: null,
       switching: false,
-      retryRound: 0
+      retryRound: 0,
+      frameSupported: typeof this.recorderManager.onFrameRecorded === 'function'
     };
 
-    this.recorderManager.onFrameRecorded(this.onFrameRecorded.bind(this));
+    if (this.recorderState.frameSupported) {
+      this.recorderManager.onFrameRecorded(this.onFrameRecorded.bind(this));
+    }
     this.recorderManager.onStop(() => {
       if (!this.data.isListening) return;
       // 避免切参过程中 stop 误触发最终失败
@@ -205,6 +212,7 @@ Page({
       sampleRate: profile.sampleRate || 16000,
       frameSize: profile.frameSize || 5
     };
+    if (profile.encodeBitRate) options.encodeBitRate = profile.encodeBitRate;
     if (profile.format) options.format = profile.format;
     if (profile.useMic) options.audioSource = 'mic';
     return options;
@@ -232,7 +240,7 @@ Page({
     this.currentRecorderFormat = (profile.format || '').toLowerCase();
     this.currentAnalysisWindowSize = profile.analysisWindowSize || 2048;
     this.currentAnalysisHopSize = profile.analysisHopSize || Math.floor(this.currentAnalysisWindowSize / 2);
-    const profileText = `${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz${profile.useMic ? '/mic' : ''}`;
+    const profileText = `${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz/${profile.encodeBitRate || 'default'}bps${profile.useMic ? '/mic' : ''}`;
     this.setData({
       recorderProfileIndex: index,
       activeProfileText: profileText,
@@ -341,17 +349,6 @@ Page({
       currentString,
       targetFrequencyText: currentString ? currentString.frequencyText : '--'
     });
-
-    try {
-      this.recorderManager.stop();
-    } catch (e) {
-      // ignore stop race
-    }
-
-    setTimeout(() => {
-      if (!this.data.isListening) return;
-      this.startWithProfile(nextIndex);
-    }, 120);
   },
 
   applyPreset(index) {
@@ -519,6 +516,22 @@ Page({
 
   startListening() {
     this.stopListening(false);
+    if (!this.recorderManager) {
+      this.setData({
+        isListening: false,
+        statusText: '当前设备不支持录音能力',
+        statusLevel: 'idle'
+      });
+      return;
+    }
+    if (!this.recorderState || !this.recorderState.frameSupported) {
+      this.setData({
+        isListening: false,
+        statusText: '当前设备暂不支持实时音高监听',
+        statusLevel: 'idle'
+      });
+      return;
+    }
     this.ensureRecordPermission()
       .then(() => {
         this.setData({
@@ -531,6 +544,7 @@ Page({
         this.frequencyHistory = [];
         this.stabilityHistory = [];
         this.pendingSampleQueue = [];
+        this.noiseFloorRms = 0;
         if (this.recorderState) {
           this.recorderState.retryRound = 0;
         }
@@ -595,6 +609,7 @@ Page({
     this.stabilityHistory = [];
     this.pendingSampleQueue = [];
     this.currentRecorderFormat = '';
+    this.noiseFloorRms = 0;
     if (this.recorderState) {
       this.recorderState.hasFirstFrame = false;
       this.recorderState.switching = false;
@@ -737,39 +752,40 @@ Page({
     const processed = this.preprocessAudioFrame(data);
     if (!processed) return null;
     const { floatBuffer, rms } = processed;
-    if (rms < 0.0012) {
+    const targetFrequency = this.getTargetFrequency() || 65.4;
+    const silenceThreshold = this.getSilenceThreshold(rms);
+    if (rms < silenceThreshold) {
       return null;
     }
 
-    const pyinResult = this.detectPitchWithPyin(floatBuffer, sampleRate, 45, 1600);
-    const wideBand = this.detectPitchWithAutoCorrelation(floatBuffer, sampleRate, 45, 1600);
+    const yinResult = this.detectPitchWithYin(floatBuffer, sampleRate, 45, 1000, targetFrequency);
+    const wideBand = (!yinResult || yinResult.confidence < 0.45)
+      ? this.detectPitchWithAutoCorrelation(floatBuffer, sampleRate, 45, 1000)
+      : { frequency: 0, clarity: 0 };
     const zeroCrossFrequency = this.estimateFrequencyFromZeroCrossings(floatBuffer, sampleRate);
 
-    let rawFrequency = 0;
-    let confidence = 0;
-
-    if (pyinResult && pyinResult.frequency > 0) {
-      rawFrequency = pyinResult.frequency;
-      confidence = Math.max(confidence, pyinResult.confidence || 0);
-    }
+    let rawFrequency = yinResult && yinResult.frequency > 0 ? yinResult.frequency : 0;
+    let confidence = yinResult ? (yinResult.confidence || 0) : 0;
 
     if (wideBand && wideBand.frequency > 0) {
-      if (!rawFrequency || (wideBand.clarity || 0) > confidence + 0.08) {
+      const yinDistance = rawFrequency ? Math.abs(this.frequencyToCents(this.calibrateToTargetOctave(rawFrequency, targetFrequency), targetFrequency)) : Infinity;
+      const acDistance = Math.abs(this.frequencyToCents(this.calibrateToTargetOctave(wideBand.frequency, targetFrequency), targetFrequency));
+      if (!rawFrequency || (wideBand.clarity || 0) > confidence + 0.05 || acDistance + 10 < yinDistance) {
         rawFrequency = wideBand.frequency;
       }
       confidence = Math.max(confidence, wideBand.clarity || 0);
     }
 
-    if (!rawFrequency && zeroCrossFrequency > 0) {
-      rawFrequency = zeroCrossFrequency;
-      confidence = Math.max(confidence, 0.15);
+    if ((!rawFrequency || confidence < 0.24) && zeroCrossFrequency > 0) {
+      rawFrequency = rawFrequency || zeroCrossFrequency;
+      confidence = Math.max(confidence, 0.22);
     }
 
-    const volume = Math.min(100, Math.round(rms * 360));
+    const volume = Math.min(100, Math.round(rms * 380));
     const stability = rawFrequency > 0
       ? Math.max(12, Math.min(100, Math.round(confidence * 100)))
       : 0;
-    const hasStablePitch = rawFrequency > 0 && confidence >= 0.2;
+    const hasStablePitch = rawFrequency > 0 && confidence >= 0.3;
 
     return {
       hasSignal: true,
@@ -891,7 +907,8 @@ Page({
 
   preprocessAudioFrame(data) {
     if (!data || data.length < 256) return null;
-    const size = Math.min(4096, data.length);
+    const preferredSize = this.currentAnalysisWindowSize || 4096;
+    const size = Math.min(preferredSize, data.length);
     const start = data.length > size ? data.length - size : 0;
     const floatBuffer = new Float32Array(size);
     let mean = 0;
@@ -910,6 +927,16 @@ Page({
     }
     rms = Math.sqrt(rms / size);
     return { floatBuffer, rms };
+  },
+
+  getSilenceThreshold(rms) {
+    const seedFloor = 0.0002;
+    if (!this.noiseFloorRms || !Number.isFinite(this.noiseFloorRms)) {
+      this.noiseFloorRms = Math.min(Math.max(rms * 0.35, seedFloor), 0.0012);
+    } else if (rms <= Math.max(0.003, this.noiseFloorRms * 3)) {
+      this.noiseFloorRms = this.noiseFloorRms * 0.95 + Math.min(rms, 0.0035) * 0.05;
+    }
+    return Math.max(0.00045, Math.min(0.0022, (this.noiseFloorRms || seedFloor) * 1.8 + 0.00012));
   },
 
   detectPitchWithAutoCorrelation(buffer, sampleRate, minFreq = 45, maxFreq = 1600) {
@@ -1031,97 +1058,119 @@ Page({
     return sorted[mid];
   },
 
-  detectPitchWithPyin(buffer, sampleRate, minFreq = 45, maxFreq = 1600) {
-    const size = Math.min(2048, buffer.length);
-    if (size < 512) return { frequency: 0, confidence: 0 };
+  refineLagWithParabola(values, index) {
+    if (!values || index <= 0 || index >= values.length - 1) return index;
+    const s0 = values[index - 1];
+    const s1 = values[index];
+    const s2 = values[index + 1];
+    const denom = s0 + s2 - (2 * s1);
+    if (!Number.isFinite(denom) || denom === 0) return index;
+    return index + ((s0 - s2) / (2 * denom));
+  },
 
-    const halfSize = Math.floor(size / 2);
-    const yinBuffer = new Float32Array(halfSize);
-    const safeMinFreq = Math.max(35, Number(minFreq) || 45);
-    const safeMaxFreq = Math.min(2000, Math.max(safeMinFreq + 10, Number(maxFreq) || 1600));
+  getCorrelationAtLag(buffer, lag) {
+    if (!buffer || lag <= 0 || lag >= buffer.length) return 0;
+    let sum = 0;
+    let energyA = 0;
+    let energyB = 0;
+    const limit = buffer.length - lag;
+    for (let i = 0; i < limit; i += 1) {
+      const a = buffer[i];
+      const b = buffer[i + lag];
+      sum += a * b;
+      energyA += a * a;
+      energyB += b * b;
+    }
+    const denom = Math.sqrt(energyA * energyB);
+    return denom ? sum / denom : 0;
+  },
+
+  scoreYinCandidate(candidate, sampleRate, targetFrequency, buffer, referenceTau) {
+    const frequency = sampleRate / candidate.tau;
+    if (!Number.isFinite(frequency) || frequency <= 0) return -Infinity;
+    const harmonicBias = referenceTau ? Math.min(0.18, (candidate.tau / referenceTau) * 0.08) : 0;
+    const correlation = this.getCorrelationAtLag(buffer, Math.max(1, Math.round(candidate.tau)));
+    let proximity = 0;
+    if (targetFrequency) {
+      const calibrated = this.calibrateToTargetOctave(frequency, targetFrequency);
+      const centsOffset = Math.abs(this.frequencyToCents(calibrated, targetFrequency));
+      proximity = Math.max(0, 1 - (centsOffset / 120));
+    }
+    return ((1 - candidate.value) * 1.2) + (correlation * 0.7) + (proximity * 0.75) + harmonicBias;
+  },
+
+  detectPitchWithYin(buffer, sampleRate, minFreq = 45, maxFreq = 1000, targetFrequency = 0) {
+    if (!buffer || buffer.length < 1024) return { frequency: 0, confidence: 0 };
+    const safeMinFreq = Math.max(40, Number(minFreq) || 45);
+    const safeMaxFreq = Math.min(1200, Math.max(safeMinFreq + 10, Number(maxFreq) || 1000));
+    const halfSize = Math.floor(buffer.length / 2);
     const minTau = Math.max(2, Math.floor(sampleRate / safeMaxFreq));
     const maxTau = Math.min(halfSize - 2, Math.ceil(sampleRate / safeMinFreq));
+    if (maxTau <= minTau) return { frequency: 0, confidence: 0 };
 
-    for (let tau = 1; tau < halfSize; tau += 1) {
+    const yinBuffer = new Float32Array(maxTau + 2);
+    yinBuffer[0] = 1;
+    let runningSum = 0;
+
+    for (let tau = 1; tau <= maxTau; tau += 1) {
       let sum = 0;
-      for (let i = 0; i < halfSize; i += 1) {
+      const limit = buffer.length - tau;
+      for (let i = 0; i < limit; i += 1) {
         const delta = buffer[i] - buffer[i + tau];
         sum += delta * delta;
       }
-      yinBuffer[tau] = sum;
+      runningSum += sum;
+      yinBuffer[tau] = runningSum ? (sum * tau) / runningSum : 1;
     }
 
-    yinBuffer[0] = 1;
-    let runningSum = 0;
-    for (let tau = 1; tau < halfSize; tau += 1) {
-      runningSum += yinBuffer[tau];
-      yinBuffer[tau] = runningSum ? (yinBuffer[tau] * tau) / runningSum : 1;
-    }
-
-    const thresholds = [0.05, 0.075, 0.1, 0.125, 0.15, 0.2, 0.25, 0.3];
+    const absoluteThreshold = 0.12;
+    const relaxedThreshold = 0.2;
     const candidates = [];
+    let bestTau = -1;
+    let bestValue = Infinity;
 
-    thresholds.forEach((threshold, thresholdIndex) => {
-      for (let tau = minTau; tau <= maxTau; tau += 1) {
-        if (yinBuffer[tau] < threshold) {
-          while (tau + 1 <= maxTau && yinBuffer[tau + 1] < yinBuffer[tau]) {
-            tau += 1;
-          }
-          const s0 = yinBuffer[tau - 1] || yinBuffer[tau];
-          const s1 = yinBuffer[tau];
-          const s2 = yinBuffer[tau + 1] || yinBuffer[tau];
-          const denom = s0 + s2 - (2 * s1);
-          const betterTau = denom !== 0 ? tau + ((s0 - s2) / (2 * denom)) : tau;
-          const weight = (1 - threshold) * (1 - Math.min(1, s1)) * (1 + ((thresholds.length - thresholdIndex) / thresholds.length) * 0.35);
-          candidates.push({ tau: betterTau, weight, valley: s1 });
-          break;
-        }
+    for (let tau = minTau; tau <= maxTau; tau += 1) {
+      const value = yinBuffer[tau];
+      if (value < bestValue) {
+        bestValue = value;
+        bestTau = tau;
       }
-    });
-
-    if (!candidates.length) {
-      let bestTau = -1;
-      let bestValley = Infinity;
-      for (let tau = minTau; tau <= maxTau; tau += 1) {
-        if (yinBuffer[tau] < bestValley) {
-          bestValley = yinBuffer[tau];
-          bestTau = tau;
-        }
+      const isLocalMin = value <= yinBuffer[tau - 1] && value <= yinBuffer[tau + 1];
+      if (!isLocalMin) continue;
+      if (value <= absoluteThreshold || (value <= relaxedThreshold && tau >= Math.floor(maxTau * 0.45))) {
+        candidates.push({
+          tau: this.refineLagWithParabola(yinBuffer, tau),
+          value
+        });
       }
-      if (bestTau === -1 || bestValley > 0.45) {
-        return { frequency: 0, confidence: 0 };
-      }
-      candidates.push({ tau: bestTau, weight: 1 - Math.min(1, bestValley), valley: bestValley });
     }
 
-    let totalWeight = 0;
-    let weightedTau = 0;
-    let bestWeight = 0;
-    let bestValley = 1;
-    candidates.forEach((candidate) => {
-      totalWeight += candidate.weight;
-      weightedTau += candidate.tau * candidate.weight;
-      if (candidate.weight > bestWeight) {
-        bestWeight = candidate.weight;
-        bestValley = candidate.valley;
+    if (!candidates.length && bestTau !== -1 && bestValue < 0.35) {
+      candidates.push({
+        tau: this.refineLagWithParabola(yinBuffer, bestTau),
+        value: bestValue
+      });
+    }
+    if (!candidates.length) return { frequency: 0, confidence: 0 };
+
+    const referenceTau = candidates[0].tau;
+    let bestCandidate = candidates[0];
+    let bestScore = this.scoreYinCandidate(bestCandidate, sampleRate, targetFrequency, buffer, referenceTau);
+    for (let i = 1; i < candidates.length; i += 1) {
+      const score = this.scoreYinCandidate(candidates[i], sampleRate, targetFrequency, buffer, referenceTau);
+      if (score > bestScore) {
+        bestScore = score;
+        bestCandidate = candidates[i];
       }
-    });
+    }
 
-    if (!totalWeight) return { frequency: 0, confidence: 0 };
-    const finalTau = weightedTau / totalWeight;
-    const frequency = sampleRate / finalTau;
-    const confidence = Math.max(0, Math.min(1, 1 - bestValley));
-
+    const frequency = sampleRate / bestCandidate.tau;
+    const confidence = Math.max(0, Math.min(1, (1 - bestCandidate.value) * 0.78 + Math.max(0, bestScore - 0.55) * 0.18));
     return {
-      frequency: frequency >= 35 && frequency <= 2000 ? frequency : 0,
+      frequency: frequency >= safeMinFreq && frequency <= 1200 ? frequency : 0,
       confidence
     };
   },
-
-  detectPitchWithYin(buffer, sampleRate) {
-    return this.detectPitchWithPyin(buffer, sampleRate, 45, 1600);
-  },
-
 
   calibrateToTargetOctave(frequency, targetFrequency) {
     if (!frequency || !targetFrequency) return frequency;

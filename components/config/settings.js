@@ -2,7 +2,7 @@
 const AppSettings = {
   // 应用信息
   appName: '古琴助手',
-  appVersion: '1.0.0',
+  appVersion: '1.2.12',
   appDesc: '极简风格的古琴练习打卡工具',
   
   // 默认用户信息
