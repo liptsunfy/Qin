@@ -2,7 +2,6 @@
   <view class="card page-title-card">
     <view class="page-title-wrap">
       <text class="page-title">练习录音</text>
-      <text class="page-subtitle">及时留存每次练习，方便回听与复盘</text>
     </view>
   </view>
 

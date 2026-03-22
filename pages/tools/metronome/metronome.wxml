@@ -2,7 +2,6 @@
   <view class="card page-title-card">
     <view class="page-title-wrap">
       <text class="page-title">节拍器</text>
-      <text class="page-subtitle">稳定节拍，慢练与提速都更从容</text>
     </view>
   </view>
 

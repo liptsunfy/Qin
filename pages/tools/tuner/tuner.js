@@ -94,8 +94,7 @@ Page({
   },
 
   getRecorderProfiles() {
-    // 录音启动参数按“16000Hz / 48kbps 优先，44100Hz / 96kbps 高精度回退”排列。
-    // 对古琴 65~150Hz 的基频识别来说，16k 已足够；同时保留更高采样率供新设备尝试。
+    // 固定在 16000Hz 兼容链上，只在 format / bitRate / frameSize 上做最小必要回退。
     return [
       { sampleRate: 16000, encodeBitRate: 48000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
       { sampleRate: 16000, encodeBitRate: 48000, frameSize: 5, analysisWindowSize: 4096, analysisHopSize: 512 },
@@ -103,10 +102,8 @@ Page({
       { sampleRate: 16000, encodeBitRate: 64000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
       { sampleRate: 16000, encodeBitRate: 48000, frameSize: 8, useMic: true, analysisWindowSize: 8192, analysisHopSize: 1024 },
       { sampleRate: 16000, encodeBitRate: 48000, frameSize: 8, analysisWindowSize: 8192, analysisHopSize: 1024 },
-      { sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { format: 'pcm', sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { format: 'wav', sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 }
+      { format: 'pcm', sampleRate: 16000, encodeBitRate: 48000, frameSize: 8, useMic: true, analysisWindowSize: 8192, analysisHopSize: 1024 },
+      { sampleRate: 16000, encodeBitRate: 64000, frameSize: 8, useMic: true, analysisWindowSize: 8192, analysisHopSize: 1024 }
     ];
   },
 
