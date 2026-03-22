@@ -94,19 +94,19 @@ Page({
   },
 
   getRecorderProfiles() {
-    // 古琴低音最低约 65Hz，需要较长分析窗覆盖多个周期；
-    // 同时 hop 控制在约 50ms 内，保证拨弦后的反馈刷新足够及时。
+    // 录音启动参数按“16000Hz / 48kbps 优先，44100Hz / 96kbps 高精度回退”排列。
+    // 对古琴 65~150Hz 的基频识别来说，16k 已足够；同时保留更高采样率供新设备尝试。
     return [
-      { format: 'PCM', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { format: 'pcm', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { format: 'wav', sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { sampleRate: 44100, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { format: 'PCM', sampleRate: 16000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
-      { sampleRate: 16000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
-      { sampleRate: 16000, frameSize: 8, useMic: true, analysisWindowSize: 8192, analysisHopSize: 1024 },
-      { sampleRate: 44100, frameSize: 4, analysisWindowSize: 4096, analysisHopSize: 2048 },
-      { sampleRate: 16000, frameSize: 5, analysisWindowSize: 4096, analysisHopSize: 512 },
-      { sampleRate: 16000, frameSize: 8, analysisWindowSize: 8192, analysisHopSize: 1024 }
+      { sampleRate: 16000, encodeBitRate: 48000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
+      { sampleRate: 16000, encodeBitRate: 48000, frameSize: 5, analysisWindowSize: 4096, analysisHopSize: 512 },
+      { format: 'pcm', sampleRate: 16000, encodeBitRate: 48000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
+      { sampleRate: 16000, encodeBitRate: 64000, frameSize: 5, useMic: true, analysisWindowSize: 4096, analysisHopSize: 512 },
+      { sampleRate: 16000, encodeBitRate: 48000, frameSize: 8, useMic: true, analysisWindowSize: 8192, analysisHopSize: 1024 },
+      { sampleRate: 16000, encodeBitRate: 48000, frameSize: 8, analysisWindowSize: 8192, analysisHopSize: 1024 },
+      { sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
+      { sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, analysisWindowSize: 4096, analysisHopSize: 2048 },
+      { format: 'pcm', sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 },
+      { format: 'wav', sampleRate: 44100, encodeBitRate: 96000, frameSize: 4, useMic: true, analysisWindowSize: 4096, analysisHopSize: 2048 }
     ];
   },
 
@@ -212,6 +212,7 @@ Page({
       sampleRate: profile.sampleRate || 16000,
       frameSize: profile.frameSize || 5
     };
+    if (profile.encodeBitRate) options.encodeBitRate = profile.encodeBitRate;
     if (profile.format) options.format = profile.format;
     if (profile.useMic) options.audioSource = 'mic';
     return options;
@@ -239,7 +240,7 @@ Page({
     this.currentRecorderFormat = (profile.format || '').toLowerCase();
     this.currentAnalysisWindowSize = profile.analysisWindowSize || 2048;
     this.currentAnalysisHopSize = profile.analysisHopSize || Math.floor(this.currentAnalysisWindowSize / 2);
-    const profileText = `${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz${profile.useMic ? '/mic' : ''}`;
+    const profileText = `${profile.format || 'default'}/${profile.sampleRate || 'default'}Hz/${profile.encodeBitRate || 'default'}bps${profile.useMic ? '/mic' : ''}`;
     this.setData({
       recorderProfileIndex: index,
       activeProfileText: profileText,
