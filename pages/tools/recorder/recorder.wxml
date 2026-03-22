@@ -1,6 +1,8 @@
 <view class="page">
-  <view class="hero-card">
-    <text class="title">练习录音</text>
+  <view class="card page-title-card">
+    <view class="page-title-wrap">
+      <text class="page-title">练习录音</text>
+    </view>
   </view>
 
   <view class="card mode-card">
