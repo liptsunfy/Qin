@@ -542,6 +542,7 @@ Page({
         this.stabilityHistory = [];
         this.pendingSampleQueue = [];
         this.noiseFloorRms = 0;
+        this.lastDisplayedFrequency = 0;
         if (this.recorderState) {
           this.recorderState.retryRound = 0;
         }
@@ -607,6 +608,7 @@ Page({
     this.pendingSampleQueue = [];
     this.currentRecorderFormat = '';
     this.noiseFloorRms = 0;
+    this.lastDisplayedFrequency = 0;
     if (this.recorderState) {
       this.recorderState.hasFirstFrame = false;
       this.recorderState.switching = false;
@@ -743,7 +745,26 @@ Page({
     }
   },
 
-  detectPitchFromSamples(data) {
+  getDetectionRange(fastMode = false) {
+    const strings = this.data.strings || [];
+    const currentString = this.data.currentString || strings[this.data.currentStringIndex] || null;
+    if (this.data.autoTune && strings.length) {
+      const frequencies = strings.map(item => Number(item.frequency || 0)).filter(Boolean);
+      const min = Math.min(...frequencies);
+      const max = Math.max(...frequencies);
+      return {
+        min: fastMode ? Math.max(55, min * 0.88) : Math.max(55, min * 0.8),
+        max: fastMode ? Math.min(220, max * 1.15) : Math.min(220, max * 1.28)
+      };
+    }
+    const target = currentString ? Number(currentString.frequency || 65.4) : 65.4;
+    return {
+      min: fastMode ? Math.max(55, target * 0.82) : Math.max(55, target * 0.72),
+      max: fastMode ? Math.min(220, target * 1.22) : Math.min(220, target * 1.45)
+    };
+  },
+
+  detectPitchFromSamples(data, options = {}) {
     if (!data || !data.length) return null;
     const sampleRate = this.currentRecorderSampleRate || 16000;
     const processed = this.preprocessAudioFrame(data);
@@ -755,9 +776,10 @@ Page({
       return null;
     }
 
-    const yinResult = this.detectPitchWithYin(floatBuffer, sampleRate, 45, 1000, targetFrequency);
-    const wideBand = (!yinResult || yinResult.confidence < 0.45)
-      ? this.detectPitchWithAutoCorrelation(floatBuffer, sampleRate, 45, 1000)
+    const detectionRange = this.getDetectionRange(!!options.fastMode);
+    const yinResult = this.detectPitchWithYin(floatBuffer, sampleRate, detectionRange.min, detectionRange.max, targetFrequency);
+    const wideBand = (!yinResult || yinResult.confidence < (options.fastMode ? 0.34 : 0.45))
+      ? this.detectPitchWithAutoCorrelation(floatBuffer, sampleRate, detectionRange.min, detectionRange.max)
       : { frequency: 0, clarity: 0 };
     const zeroCrossFrequency = this.estimateFrequencyFromZeroCrossings(floatBuffer, sampleRate);
 
@@ -782,32 +804,47 @@ Page({
     const stability = rawFrequency > 0
       ? Math.max(12, Math.min(100, Math.round(confidence * 100)))
       : 0;
-    const hasStablePitch = rawFrequency > 0 && confidence >= 0.3;
+    const hasStablePitch = rawFrequency > 0 && confidence >= (options.fastMode ? 0.24 : 0.3);
 
     return {
       hasSignal: true,
       hasStablePitch,
       frequency: rawFrequency,
       volume,
-      stability
+      stability,
+      confidence,
+      isFastEstimate: !!options.fastMode
     };
   },
 
   consumeQueuedPitchDetection() {
     const queue = this.pendingSampleQueue || [];
-    const windowSize = this.currentAnalysisWindowSize || 2048;
+    const windowSize = this.currentAnalysisWindowSize || 4096;
     const hopSize = this.currentAnalysisHopSize || Math.floor(windowSize / 2);
-    if (queue.length < windowSize) return null;
+    const quickWindowSize = Math.min(2048, windowSize);
+    if (queue.length < quickWindowSize) return null;
 
     let bestDetection = null;
     let processedCount = 0;
-    while (this.pendingSampleQueue.length >= windowSize && processedCount < 3) {
-      const frame = Int16Array.from(this.pendingSampleQueue.slice(0, windowSize));
-      const detection = this.detectPitchFromSamples(frame);
+    while (this.pendingSampleQueue.length >= quickWindowSize && processedCount < 3) {
+      const recentQueue = this.pendingSampleQueue;
+      const quickFrame = Int16Array.from(recentQueue.slice(Math.max(0, recentQueue.length - quickWindowSize)));
+      const quickDetection = this.detectPitchFromSamples(quickFrame, { fastMode: true });
+
+      let refinedDetection = quickDetection;
+      if (recentQueue.length >= windowSize) {
+        const preciseFrame = Int16Array.from(recentQueue.slice(Math.max(0, recentQueue.length - windowSize)));
+        const preciseDetection = this.detectPitchFromSamples(preciseFrame, { fastMode: false });
+        if (preciseDetection && (preciseDetection.hasStablePitch || !quickDetection || (preciseDetection.stability || 0) >= (quickDetection.stability || 0))) {
+          refinedDetection = preciseDetection;
+        }
+      }
+
+      const detection = refinedDetection || quickDetection;
       if (detection && (!bestDetection || (detection.stability || 0) >= (bestDetection.stability || 0))) {
         bestDetection = detection;
       }
-      this.pendingSampleQueue.splice(0, hopSize);
+      this.pendingSampleQueue.splice(0, Math.min(hopSize, recentQueue.length));
       processedCount += 1;
     }
     return bestDetection;
@@ -1047,12 +1084,21 @@ Page({
       this.frequencyHistory = [];
     }
     this.frequencyHistory.push(frequency);
-    if (this.frequencyHistory.length > 7) {
+    if (this.frequencyHistory.length > 6) {
       this.frequencyHistory.shift();
     }
-    const sorted = [...this.frequencyHistory].sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    return sorted[mid];
+    const weights = this.frequencyHistory.map((_, index, arr) => index + 1);
+    const weightedSum = this.frequencyHistory.reduce((sum, value, index) => sum + value * weights[index], 0);
+    const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+    const weightedAverage = weightedSum / totalWeight;
+    if (this.lastDisplayedFrequency) {
+      const relativeDiff = Math.abs(weightedAverage - this.lastDisplayedFrequency) / this.lastDisplayedFrequency;
+      if (relativeDiff < 0.0035) {
+        return this.lastDisplayedFrequency;
+      }
+    }
+    this.lastDisplayedFrequency = weightedAverage;
+    return weightedAverage;
   },
 
   refineLagWithParabola(values, index) {
